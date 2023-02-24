@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  redis-db:
+    image: arm32v7/redis
+    restart: always
+    container_name: redis-db
+    networks:
+      - front-end
+      - back-end
+
+  postgres-db:
+    image: postgres
+    restart: always
+    container_name: postgres-db
+    networks:
+      - front-end
+      - back-end
+    environment:
+      POSTGRES_USER: energy
+      POSTGRES_PASSWORD: energy
+      POSTGRES_DB: energy
+    volumes:
+      - energy-db:/var/lib/postgresql/data
+
+  adminer:
+    image: adminer
+    restart: always
+    container_name: postgres-adm
+    ports:
+      - 8080:8080
+    networks:
+      - back-end
+
+  energy-webhook:
+    container_name: webhook
+    image: sbv1307/energy-webhook
+    restart: always
+# During development mount volume! In production, files are copied into the webhook image
+    volumes:
+      - ./energy-webhook/www/:/var/www/html/
+    links:
+      - redis-db
+    ports:
+      - 8880:80
+    depends_on:
+      - redis-db
+    networks:
+      - front-end
+  
+  energy-worker:
+    container_name: energy-worker
+    image: sbv1307/energy-worker 
+    restart: always
+# During development mount volume! In production, files are copied into the worker image
+    volumes:
+      - ./energy-worker/python:/usr/src/app
+    links:
+      - redis-db
+      - postgres-db
+    depends_on:
+      - redis-db
+      - postgres-db
+    networks:
+      - back-end
+
+networks:
+  front-end:
+    name: Fron-end
+  back-end:
+    name: back-end
+
+volumes:
+  energy-db:
+    name: energy-db
