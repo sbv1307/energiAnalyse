@@ -2,12 +2,13 @@
 energy-worker.py
 
 '''
-
+import os
 import sys
 import psycopg2
 import redis
 import time
 
+from os.path import exists
 from pgConnect import pgConnect
 from pgCreateTables import pgCreateTables
 from pulseTimeStampHandler import pulseTimeStampHandler
@@ -32,6 +33,18 @@ def illigalKeyHandler( key, valye):
 ####################################################################################################
 ############################  M A I N #############################################################
 
+# Creat postgres.ini file from environmentvariables if it does not exist
+if (not exists("/usr/src/app/postgres.ini")):
+
+    content = """[postgresql]
+host=%s
+database=%s
+user=%s
+password=%s
+""" % (os.environ['POSTGRES_HOST'], os.environ['POSTGRES_DB'], os.environ['POSTGRES_USER'], os.environ['POSTGRES_PASSWORD'])
+
+    f = open("postgres.ini", "w")
+    f.write(content)
 
 r = redis.Redis( host='redis-db', )
 print(f'Connection to redis: {r}')

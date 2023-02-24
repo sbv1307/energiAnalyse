@@ -1,6 +1,12 @@
 <?php
+$postgres_user = getenv('POSTGRES_USER', true) ?: getenv('POSTGRES_USER');
+$postgres_password = getenv('POSTGRES_PASSWORD', true) ?: getenv('POSTGRES_PASSWORD');
+$postgres_db = getenv('POSTGRES_DB', true) ?: getenv('POSTGRES_DB');
+$postgres_host = getenv('POSTGRES_HOST', true) ?: getenv('POSTGRES_HOST');
+
+
 // attempt a connection
-$dbh = pg_connect("host=postgres-db dbname=energy user=energy password=energy");
+$dbh = pg_connect("host=$postgres_host dbname=$postgres_db user=$postgres_user password=$postgres_password");
 
 if (!$dbh) {
     die("Error in connection: " . pg_last_error());
@@ -25,18 +31,20 @@ if (!$result) {
 <title>Energi metre</title>
 </head>
 <body>
+
 <iframe name="dummyframe" id="dummyframe" style="display: none;"></iframe>    
 
 <h1>Tilret kWh for energimetre</h1>
 
-
-
 <?php
+$meter_metedata_sql = "SELECT meter_name FROM meter_metadata";
+$meter_metedata = pg_query($dbh, $meter_metedata_sql);
 
 while ($row = pg_fetch_array($result)) {
+$meter_names = pg_fetch_array($meter_metedata);    
 
 ?>
-
+<h3>  <?php echo $meter_names[0];?></h3>
 <form method='post' action='./webhook.php' target="dummyframe">
     <label>Enter kWh for meter numer: </label>
     <input type='text' name='channel' value="<?php echo $row[0] ?>">

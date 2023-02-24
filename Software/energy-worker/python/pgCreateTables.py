@@ -104,7 +104,7 @@ def pgCreateTables():
                 (2, 'Kraftstik Værksted Garage', 100, 11000, 1.0, 10),
                 (3, 'Kontor EDB', 1000, 2500, 1.0, 10),
                 (4, 'Bryggers Teknik', 1000, 2500, 1.0, 10),
-                (5, 'Garage', 1000, 2500, 1.0, 0),
+                (5, 'Garage', 1000, 2500, 1.0, 10),
                 (6, 'Værksted Lager Loft', 1000, 2500, 1.0, 10),
                 (7, 'Kontor 1. sal', 1000, 2500, 1.0, 10),
                 ]   

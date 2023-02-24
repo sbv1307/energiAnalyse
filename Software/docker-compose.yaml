@@ -1,5 +1,17 @@
 version: '3.8'
 
+# Configual parameters for the services.
+x-environment: &enviroment_vars
+  POSTGRES_USER: energy
+  POSTGRES_PASSWORD: energy
+  POSTGRES_DB: energy
+  POSTGRES_HOST: postgres-db  # Do not change. Need to med the same as the service name for the postgres image
+  DATABASE_USER: energy
+  DATABASE_PASS: energy
+  DATABASE_NAME: energy
+  DATABASE_HOST: postgres-db  # Do not change. Need to med the same as the service name for the postgres image
+
+
 services:
   redis-db:
     image: arm32v7/redis
@@ -16,10 +28,7 @@ services:
     networks:
       - front-end
       - back-end
-    environment:
-      POSTGRES_USER: energy
-      POSTGRES_PASSWORD: energy
-      POSTGRES_DB: energy
+    environment: *enviroment_vars
     volumes:
       - energy-db:/var/lib/postgresql/data
 
@@ -39,6 +48,7 @@ services:
 # During development mount volume! In production, files are copied into the webhook image
     volumes:
       - ./energy-webhook/www/:/var/www/html/
+    environment: *enviroment_vars
     links:
       - redis-db
     ports:
@@ -55,6 +65,7 @@ services:
 # During development mount volume! In production, files are copied into the worker image
     volumes:
       - ./energy-worker/python:/usr/src/app
+    environment: *enviroment_vars
     links:
       - redis-db
       - postgres-db
@@ -64,6 +75,21 @@ services:
     networks:
       - back-end
 
+  grafana:
+    container_name: grafana
+    image: grafana/grafana
+    restart: always
+    environment: *enviroment_vars
+    volumes:
+      - energy-grafana-data:/var/lib/grafana
+    ports:
+      - 3500:3000
+    depends_on:
+      - postgres-db
+    networks:
+      - back-end
+      
+
 networks:
   front-end:
     name: Fron-end
@@ -71,5 +97,7 @@ networks:
     name: back-end
 
 volumes:
+  energy-grafana-data:
+    name: grafana-data
   energy-db:
     name: energy-db
