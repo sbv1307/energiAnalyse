@@ -1,9 +1,4 @@
-# Duvikling: FROM php:8.0-apache
-# Production: FROM arm32v7/php:apache
-# NOTE: When changing image to e.g. arm32v7/php, verify that the PHP config file is located in /usr/local/etc/php/conf.d
-#FROM php:8.1-apache
-#FROM php:apache
-From arm32v7/php:7.2-apache
+FROM arm32v7/php:7.2-apache
 
 #FROM arm32v7/php:apache
 LABEL "Name"="Apahe webhook Version=2.0.0"
@@ -34,5 +29,5 @@ RUN docker-php-ext-install pgsql
 # Set workking directory for the webhook server. /var/www/html/ is the default DocumentRoot
 WORKDIR /var/www/html/
 
-# Copy 
-COPY ./www/ .
+# Copy only .php files
+COPY ./www .

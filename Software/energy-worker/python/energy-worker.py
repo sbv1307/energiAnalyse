@@ -45,6 +45,10 @@ password=%s
 
     f = open("postgres.ini", "w")
     f.write(content)
+    f.close()
+    # An issue about pgConfig not being able to read the postgres.ini file at the initial run, could ldead to the idea, that the OS needs to release the file.
+    # Setting a pause for 0,5 secunds might solve this issue...
+    time.sleep(0.5
 
 r = redis.Redis( host='redis-db', )
 print(f'Connection to redis: {r}')

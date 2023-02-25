@@ -59,6 +59,7 @@ def pgCreateTables():
     
     conn = None
     try:
+        action = "pgCreateTables - Get parms from pgConfig"
         # read the connection parameters
         params = pgConfig()
 

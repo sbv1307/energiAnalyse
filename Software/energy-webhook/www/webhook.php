@@ -10,10 +10,6 @@ function setKeyValue($fRedis, $fKey, $fValue) {
         if ($fRedis->exists($fKey)) {
                 echo "102 Processing";
         } elseif ($fRedis->set($fKey, $fValue)) {
-//                echo "HTTP/1.1 302 Found";
-//                echo "Content-Type: text/html";
-//                echo "Connnection: close"; 
-                       
                 echo "200 OK";
         } else {
                 echo "100 error";
@@ -24,14 +20,6 @@ function setKeyValue($fRedis, $fKey, $fValue) {
 
 //Connecting to Redis
 $redis = new Redis(['host' => 'redis-db']);
-
-/* Verify connection to redis
-PS; Uncomment to print 
-
-if ($conn = $redis->ping()) {
-        echo "Connected to Redis . ping returne: ", $conn, "<br>";
-}
-*/
 
 if (isset( $_GET["debug"] ) ) {
         $getPostKey_UNKNOWN = FALSE;

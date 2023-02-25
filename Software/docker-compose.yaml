@@ -1,14 +1,18 @@
 version: '3.8'
 
-# Configual parameters for the services.
+# Configual parameters for the services. This is just a way to group these settings an mage changes easy
+# POSTGRES... environemtn variables are used in the postgres-db, energy-webhook and energy-worker services.
+# DATABASE... environment variables are used in the grafana service
 x-environment: &enviroment_vars
-  POSTGRES_USER: energy
-  POSTGRES_PASSWORD: energy
-  POSTGRES_DB: energy
+  POSTGRES_USER: energy                 # Decide you own username
+  POSTGRES_PASSWORD: energy             # Be aware of using special characteres.
+                                        # Special characters might be interpreted in various ways be the OS. 
+  POSTGRES_DB: energy                   # Decite you own database name
   POSTGRES_HOST: postgres-db  # Do not change. Need to med the same as the service name for the postgres image
-  DATABASE_USER: energy
-  DATABASE_PASS: energy
-  DATABASE_NAME: energy
+
+  DATABASE_USER: energy                 # Specify the same name as for POSTGRES_USER
+  DATABASE_PASS: energy                 # Specify the same name as for POSTGRES_PASSWORD
+  DATABASE_NAME: energy                 # Specify the same name as for POSTGRES_DB
   DATABASE_HOST: postgres-db  # Do not change. Need to med the same as the service name for the postgres image
 
 
@@ -45,9 +49,6 @@ services:
     container_name: webhook
     image: sbv1307/energy-webhook
     restart: always
-# During development mount volume! In production, files are copied into the webhook image
-    volumes:
-      - ./energy-webhook/www/:/var/www/html/
     environment: *enviroment_vars
     links:
       - redis-db
@@ -55,6 +56,7 @@ services:
       - 8880:80
     depends_on:
       - redis-db
+      - energy-worker
     networks:
       - front-end
   
@@ -62,9 +64,6 @@ services:
     container_name: energy-worker
     image: sbv1307/energy-worker 
     restart: always
-# During development mount volume! In production, files are copied into the worker image
-    volumes:
-      - ./energy-worker/python:/usr/src/app
     environment: *enviroment_vars
     links:
       - redis-db
