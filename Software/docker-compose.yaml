@@ -50,6 +50,8 @@ services:
     image: sbv1307/energy-webhook
     restart: always
     environment: *enviroment_vars
+    volumes:
+    
     links:
       - redis-db
     ports:
