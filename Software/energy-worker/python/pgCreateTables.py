@@ -58,6 +58,7 @@ def pgCreateTables():
     )
     
     conn = None
+    return_value = False
     try:
         action = "pgCreateTables - Get parms from pgConfig"
         # read the connection parameters
@@ -139,12 +140,16 @@ def pgCreateTables():
         # commit the changes
         conn.commit()
 
+        return_value = True
+    
+
     except (Exception, psycopg2.DatabaseError) as error:
         print(action, error)
     finally:
         if conn is not None:
             conn.close()
 
+    return return_value 
 
 if __name__ == '__main__':
     pgCreateTables()

@@ -52,5 +52,6 @@ if __name__ == '__main__':
         key = 'Chanel:' + meter_no + ':Timestamp'
         value = "123456"
         pgUpdateMeterCount( key, value)
+        print(f'Meter counts for meter number {meter_no} is updated to: {value} ')
         n += 1
  

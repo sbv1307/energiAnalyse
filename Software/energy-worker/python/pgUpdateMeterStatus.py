@@ -75,3 +75,4 @@ if __name__ == '__main__':
 
     pgUpdateMeterStatus(index, meter_no, watt_consumption, meter_counts, kWh, pulse_time_stamp, pulse_period, cor_time_stamp, time_stamp)
     
+    print(f'Meter status updated for meter number: {meter_no}')

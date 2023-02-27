@@ -13,9 +13,12 @@ RUN pip install --root-user-action=ignore --upgrade pip
 RUN pip install --root-user-action=ignore redis
 RUN pip install --root-user-action=ignore psycopg2-binary
 
+# Install requests package. Used by pushToGoogle module
+RUN pip install --root-user-action=ignore requests
+
 # Too many issues installing python packages for redis and postgresql to use installation based on a requirements file.
 # COPY requirements.txt ./
 # RUN pip install --no-cache-dir -r requirements.txt
 
 COPY ./python .
-CMD [ "python", "./energy-worker.py" ]
+CMD [ "python", "energy-worker.py" ]

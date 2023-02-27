@@ -9,15 +9,18 @@ def pgConnect():
 
     try:
         # read connection parameters
+        action = "pgConnect - Get configuration calling pgConfig(): "
         params = pgConfig()
 
         # connect to the PostgreSQL server
+        action = "pgConnect - Connect to PostGres database: "
         conn = psycopg2.connect(**params)
      
         # create a cursor
         cur = conn.cursor()
     
         # Verify connection to PostgresSQL
+        action = "pgConnect - SELECT version(): "
         cur.execute('SELECT version()')
 
         # display the PostgreSQL database server version
@@ -41,7 +44,8 @@ def pgConnect():
         cur.close()
 
     except (Exception, psycopg2.DatabaseError) as error:
-        print(error)
+        print(action, error)
+        returnValue = None
 
     finally:
         if conn is not None:

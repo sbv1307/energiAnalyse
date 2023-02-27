@@ -100,6 +100,15 @@ if (isset($_GET["channel"]) and isset($_GET["metercount"] )) {
         }
 }
 
+if (isset($_GET["pushtogoogle"] )) {
+        $value = $_GET["pushtogoogle"];
+        if ($value == "true" ) {
+                $getPostKey_UNKNOWN = FALSE;
+                $l_key = "pushtogoogle";
+                setKeyValue($redis, $l_key, $value);
+        }
+}
+
 if (isset($_GET["powerup"] )) {
         $value = $_GET["powerup"];
         if ($value == "true" ) {
@@ -152,6 +161,15 @@ if (isset($_POST["channel"]) and isset($_POST["metercount"] )) {
         }
 }
 
+if (isset($_POST["pushtogoogle"] )) {
+        $value = $_POST["pushtogoogle"];
+        if ($value == "true" ) {
+                $getPostKey_UNKNOWN = FALSE;
+                $l_key = "pushtogoogle";
+                setKeyValue($redis, $l_key, $value);
+        }
+}
+        
 if (isset($_POST["powerup"] )) {
         $value = $_POST["powerup"];
         if ($value == "true" ) {

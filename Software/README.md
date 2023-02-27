@@ -46,7 +46,13 @@ RUN apk add postgresql-dev gcc python3-dev musl-dev
 
 Initial varsion: 
 
+### Issue #1 Solved
+
 Version 3.0.2: Push To Google. Before the current energy registration can be removed, it's required to be able to proceed sending daily reports to google.
 
-1 - Add a ´"post to Google" function to webhook.
-2 - add the required modules to the energy worker, which can create the required GET request.
+1 - Add a ´"post to Google" function to webhook.  Solved
+2 - add the required modules to the energy worker, which can create the required GET request. 
+
+### Issue #2 - Solved
+
+README.md files for energy-webhook and -worker relocated, so they get copied to the docker image - this will reflect which verion is installed in the docker image.

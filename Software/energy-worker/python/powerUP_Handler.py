@@ -38,6 +38,8 @@ def powerUP_Handler():
 if __name__ == '__main__':
     powerUP_Handler()
 
+    print(f'Meter status updated after power up.')
+
 
 
 

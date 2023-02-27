@@ -14,6 +14,7 @@ from pgCreateTables import pgCreateTables
 from pulseTimeStampHandler import pulseTimeStampHandler
 from powerUP_Handler import powerUP_Handler
 from pgUpdateMeterCount import pgUpdateMeterCount
+from pushToGoogle import pushToGoogle
 
 def processing_flush(tekst, n, index=5):
     sys.stdout.write("\rProcessing %s %s%s" % (tekst, (n % index)* ".", (index - 1 - (n % index))* " "))
@@ -34,7 +35,7 @@ def illigalKeyHandler( key, valye):
 ############################  M A I N #############################################################
 
 # Creat postgres.ini file from environmentvariables if it does not exist
-if (not exists("/usr/src/app/postgres.ini")):
+if (not exists("/etc/postgres.ini")):
 
     content = """[postgresql]
 host=%s
@@ -43,24 +44,35 @@ user=%s
 password=%s
 """ % (os.environ['POSTGRES_HOST'], os.environ['POSTGRES_DB'], os.environ['POSTGRES_USER'], os.environ['POSTGRES_PASSWORD'])
 
-    f = open("postgres.ini", "w")
+    f = open("/etc/postgres.ini", "w")
     f.write(content)
     f.close()
-    # An issue about pgConfig not being able to read the postgres.ini file at the initial run, could ldead to the idea, that the OS needs to release the file.
-    # Setting a pause for 0,5 secunds might solve this issue...
-    time.sleep(0.5
+    
+# Set the flag for run the infinite loop 
+continue_loop = True
 
 r = redis.Redis( host='redis-db', )
 print(f'Connection to redis: {r}')
 
 # Verify connection to Postgres and initialze DB if required.
 if pgConnect() is not True:
-    print('Creating tables')
-    pgCreateTables()
-
-
+    
+    n = 0    
+    while pgConnect() is None and n < 15:
+        print('energy-worker - Connect to PostgreSQL database - Try again in 30 sec.')
+        time.sleep(30)
+        n += 1
+    
+    if n >= 15:
+        print('energy-worker - Giving up connecting to PostgreSQL database ==> ABORTING.')
+        continue_loop = False
+    elif pgConnect() is not True:
+        print('energy-worker - Creating tables in PostgreSQL database')
+        if pgCreateTables() is not True:
+            print('energy-worker - Creating tables in PostgreSQL database failed ==> ABORTING')
+            continue_loop = False
+            
 n=0
-continue_loop = True
 while continue_loop:
     # Get list of available keys in Redis DB
     keylist = r.keys("*")
@@ -102,6 +114,10 @@ while continue_loop:
 
                 x = r.delete(key)
 #                print(f'Key {key} deleted {x}')
+
+            elif "pushtogoogle" in s_key and "true" in value:
+                pushToGoogle()
+                x = r.delete(key)
 
             elif "powerup" in s_key and "true" in value:
                 powerUP_Handler()

@@ -52,9 +52,30 @@ environment:
  
 ````
 
+## pushToGoogle.py
+
+This module rquires:
+- postgres database is accessable, and tables have been created by the pgCeateTabels.py module. (typicaly done when energy-werker.py have been run once.)
+- The environmentvariable GOOGLE_WEBHOOK_URL 
+
+````Bash
+# In docker-compose.yamll file:
+environment:
+    GOOGLE_WEBHOOK_URL: <local webhook url e.g. http://192.168.10.102/energyRegistrations/updateEnergyRegistrations>
+````
+
+Currently the URL for the google webhook is:
+- http://192.168.10.102/energyRegistrations/updateEnergyRegistrations
+The request will take the form:                 function=updateSheet&dataString=<Value for meter 1>,<Value for meter 2>,....<Value for meter7>
+
+The resulting GET request will be:
+- GET /energyRegistrations/updateEnergyRegistrations?function=updateSheet&dataString=<Value for meter 1>,<Value for meter 2>,....<Value for meter7>
+
+Eksample
+ * http://192.168.10.102/energyRegistrations/updateEnergyRegistrations?function=updateSheet&dataString=279.97,752.04,260.03,441.21,806.67,1.08,3362.79
 
 
-### Comments to the Dockerfile
+## Comments to the Dockerfile
 
 The program stack requires access to both Redis in-memory data store anb PostgreSQL. 
 
@@ -84,4 +105,12 @@ RUN pip install --root-user-action=ignore psycopg2-binary
 
 ## ISSUES
 
-It seems as if gpConfig cannot read the postgres.ini file, when it is created at the first run. A pause of 0.5 sec has been inserted to see if that solves the issie.
+### Issue #1 - Solved - energy-worker.py changed to handle a situation, where the PostgreSQL database is not ready.
+
+Eenergy-worker fails to start at the initial run. After taking the program stack down (docker-compose down), and bring it up again sovled the issue sosmetimes..
+It has turned out, that the postgres-db service has not finished setting op the PostgreSQL database, and made it ready for connections. This process takes several minutes (meaured once to 3.5 minues).
+
+### Issue #2 - Solved - postgres.ini now saved in /etc
+
+Relocate postgress.ini file to the "standard" location for configuration files. Til will avoid postgres.ini from being imported from the develup enviornnment.
+https://stackoverflow.com/questions/1024114/location-of-ini-config-files-in-linux-unix

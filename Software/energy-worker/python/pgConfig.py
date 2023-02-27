@@ -3,7 +3,7 @@ import psycopg2
 from configparser import ConfigParser
 
 
-def pgConfig(filename='postgres.ini', section='postgresql'):
+def pgConfig(filename='/etc/postgres.ini', section='postgresql'):
     # create a parser
     parser = ConfigParser()
     # read config file

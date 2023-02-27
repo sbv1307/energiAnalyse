@@ -10,6 +10,7 @@ The fonction (webhook.php) will accept the follwing key - value items:
 |----|----|----|----|-----|
 | channel | 1 - 7 | millis | 0 - 2^32 | This request will pass on a channel number (meter number) and a time stamp in milli seconds (produced byt the Ardhino board monitoring the Energy meters) to the redis database. The channel number (1-7) will be incapsulated in a string like: channel:1:timestamp, where '1' is the channel number. |
 | channel | metercount |    |    | This request will pass on a channel number (meter number) and a Energy meter value produced by the default function (index.php) to the redis database. The channel number (1-7) will be incapsulated in a string like: channel:1:metercount, where '1' is the channel number. |
+| pushtogoogle | true |    |    | Will pass the Key - Value to the redis database. The Energy-worker service will create at GIT request to a webHookServer which will update the Google sheet MeterEnergyRegistrations.
 | powerup | true|    |    | This will pass on powerup and true to the redis database. The value (true) has no functionality is just need to be there, to be accepted at a legal request |
 | debug | true / false |    |    | Turn output (echo statemenst) on or off. This output will reveal whats received by the webhoog.php function and how these requests are handled.  |
 |
@@ -86,5 +87,14 @@ apt-get update && apt-get install libpq-dev -y
 # Install pgsql (Requires pg_config to install). 
 docker-php-ext-install pgsql -y # 
 ```
+
+## Version history
+
+### Issue #1 - Solved
+
+index.php - kun meter count and [Opdater] skal have fokus</br>
+Solved - Changed input type for meter number from text to hidden
+
+---
 
 [^1]: Portnumber is specified in the docker-compose.yaml file.

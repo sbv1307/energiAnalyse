@@ -8,6 +8,7 @@ def pgGetMeterMetadata(key):
 
     try:
         # read connection parameters
+        action = "pgGetMeterdata - Connect to PostGres database: "
         params = pgConfig()
 
         # connect to the PostgreSQL server
