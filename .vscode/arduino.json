@@ -1,6 +1,4 @@
 {
     "board": "arduino:avr:uno",
-    "programmer": "avrisp",
-    "port": "COM3",
-    "sketch": "Firmware\\EnergyAnalyse\\EnergyAnalyse.ino"
+    "port": "COM3"
 }
