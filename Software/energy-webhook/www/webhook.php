@@ -8,11 +8,11 @@ function setKeyValue($fRedis, $fKey, $fValue) {
                 echo "<br>Værdi: ", $fValue, "<br>";
         }
         if ($fRedis->exists($fKey)) {
-                echo "102 Processing";
+                echo "WEBHOOK 102 Processing";
         } elseif ($fRedis->set($fKey, $fValue)) {
-                echo "200 OK";
+                echo "WEBHOOK 200 OK";
         } else {
-                echo "100 error";
+                echo "WEBHOOK 100 error";
         }
 }
 
@@ -191,7 +191,7 @@ if (isset($_POST["stop"]) ) {
                 
 
 if ($getPostKey_UNKNOWN) {
-        echo "400 Bad Request<br>";
+        echo "WEBHOOK 400 Bad Request<br>";
         echo "Check POST og GET keys!<br>";
 }
 

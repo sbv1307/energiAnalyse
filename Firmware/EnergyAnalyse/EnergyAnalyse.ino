@@ -1,87 +1,24 @@
 /* Verify (compile) for Arduino Ethernet
- *  
- *  
- *  
- * This sketch reads an open collector output on a number of Carlo Gavazzi energy meters Type EM23 DIN and/or Type EM111.
- * The sketch monitors interrupt pin 2 for a FALLING puls and then reads the defined channelPins and counts pulses for each pin.
+ *
  * 
- * 
- * Upon a HTTP GET request "http://<Arduino IP address>/pushToGoogle", the sketch will return a webpage, showing the current meter valeus, 
- * and initiate a HTTP GET request towards a webHook (webHookServer), with the meter values, as the GET query values. 
- * Due to limited capacity the HTTP GET request for the webHook is hardcoded in this version. The request is:
- * GET /energyRegistrations/updateEnergyRegistrations?function=updateSheet&dataString=<Value for meter 1>,<Value for meter 2>,....<Value for meter7>
- * http://192.168.10.102/energyRegistrations/updateEnergyRegistrations?function=updateSheet&dataString=279.97,752.04,260.03,441.21,806.67,1.08,3362.79
- * 
- * A HTTP GET meterValue request "http://<Arduino IP address>/meterValue" will return a webpage showing the current meter valeus.
- * 
- * A HTTP GET meterValue?meter<n>=<nn>, where <n> represent the energy meter 1-7 and nn the actual energy meter value as readden on the meter. 
- * Then meter value will eb entered with two dicimals, but without the decimal seperator.
- * To set energy meter number 1 to 12345,67, pass the following HTTP GET request: http://<Arduino IP address>/meterValue?meter1=1234567
- * 
+ * This sketch monitors an open collector output on a number of Carlo Gavazzi energy meters Type EM23 DIN and/or Type EM111.
+ * When a FALLING pulse registered on interrupt pin 2, all the defined channelPins are read.
+ * The number of milliseconds passed since the Arduino board began running the current program, is mapped to the activated
+ * channelPins, and these datasets are posted by a _POST request to the Software for this project (The energy-webhook).
  * IP address is hardcoded to reduce memory requirement.
  * 
- * For this sketch on privat network 192.168.10.0 and Ardhino IP address 192.168.10.146 some recogniced requests are:
- * http://192.168.10.146/pushToGoogle
- * http://192.168.10.146/meterValue
- * http://192.168.10.146/meterValue?meter1=1234567
  * 
+ * For this sketch on privat network 192.168.10.0 and Ardhino IP address 192.168.10.146  * 
  * The code is made specific for the Arduino Ethernet REV3 board.
  * 
  * Created:
- * 2020-11-19
+ * 2023-02-28
  */
 
-#define SKETCH_VERSION "Carlo Gavazzi energy meter Type EM23 and/or Type EM111 DIN - Energy registrations - V2.0.0"
+#define SKETCH_VERSION "Carlo Gavazzi energy meter Type EM23 and/or Type EM111 DIN - Energy analysis - V1.0.0"
 
 
 /*
- * Future modifications / add-on's
- * 
- * - Re-define which PIN are to be used for LED. Considerations:
- *   1: BuiltIn LED is hardwired to PIN 9
- *   2: Pin 9 is a digital pin, suitable for input.
- * - When HTTP request has no or incorrect abs-path / function - load explnating HTML page for corret usage
- * - Make webHookServer IP address an port number configurable.
- * - Tilføj en pulstime korrektionsfaktor (PTKF) til PulsTimeStamp. Når en kanal registrere en puls stoppers millis(). for at kompencere
- *   for dette, oprettes en PTKF tæller for hver kanal. Denne tæller incremteres med 50 på hver a de kanaler, der ikke registreres puls på
- * - Den kanal hvor pulsen registrere, adderes PTKF til det pulsTimeStamp, som registreres / sendes og nulstilles derefter.   
- *
- * 2.0.0 - Arduino SW project now merged with KiCad Hardware, and this version surpports the new HW design
- *         1 - LED_BUILTIN on Pin #9 has stopped woring. Pin A3 will be used instead. LED_PIN changed to LED_PIN - 
- *             HOWEVER!!! It has turned out, that it was set incrrrectly by the entrepreter. Hovering over the LED_BULTIN variable indicate it expands to 13 and not 9.
- *             Setting LED_PIN to 9, makes the LED light.
- *             Since the Hardware prototype, was made to use PIN 17, Pin 17 will be used for LED_PIN in this version.
- *         2 - Channels extenced to 8 instead of 7. Noe includeing Pin A2 
- * 0.2.3 - BUILTIN_LED has stopped working - NEED INVESTIGATION AND CODE IMPLEMTATION
- * 0.2.2 - Post powerup data to google sheets (data, and the comment (Power Up))
- * 0.2.1 - Cleaning up entries used for verifying pulscounts - No functional changes.
- * 0.2.0 - Meters, which only gives 100 pulses pr. kWh, were registered as if they gave a thousenth. Might be an issue by adding "1.000 / (double)PPKW[ii]" (0.01) to the previous counts.
- *         Since 1.000 / "(double)PPKW[ii]" might now be exactly 0.01 but maybe 0.009nnnnnnnnn, which could sum up the deffrence.
- *         SO - This version 0.2.0 will count pulses (integers). 
- *         Notes to be taken here - Mixing the types long and int, can give strange results (sometimes).
- *          - Implement: Remove SD update after each pulsecount, marked: "// V0.1.4_change (1)" in ver. 0.1.4
- *          - Implement: Flashing LED_BUILTI handled by calls to millis(), marked : "// V0.1.4_change (3)" in ver. 0.1.4.
- *          - SD Updates are done for every 10 pulses or every 30 minutes (only if pulses have been registred).
- * 0.1.4 - In an attempt to investigate lost registrations, writing every update to SD will be changed (changes marked // V0.1.4_change):
- *         1 - Remove SD update after each pulsecount marked: // V0.1.4_change (1)
- *         2 - SD is updated after each call to HTTP GET meterValue request (http://<Arduino IP address>/meterValue) marked: // V0.1.4_change (2)
- *         3 - Flashing the LED_BUILTI has handeled by the time it took to write to SD. Flashing LED_BUILTI will be handled by calls to millis() marked : // V0.1.4_change (3)
- * 
- * 0.1.3 - Due to capacity limitations in version 0.1.2, this version build upon version 0.1.1
- *       - This version is to trace why pulse registrations are lost.
- *       - Screesed in the HTML <form> element form Version 0.2.1 - Makes energymeter settings much easier
- *       - Dividing entered metervalues by 100, to avodi having to enter dicimal point (a dot) when enter metervalues
- *       - Corrected BUGs in getQuery(EthernetClient localWebClient)
- *       - Error dinvestigations marked: TO_BE_REMOVED
- *       - Added further #ifdef sections.
- *       - Inserted a function call to setMeterDataDefaults in function getQuery. If Metervalue for Meter 1 is nigative, metervalues are reset
- * 0.1.2 - N O T E !!!! - Changes exceeded limit for: Low memory available, stability problems may occur.
- *         Change in HTML presentation of energy meter values. Describing text. e.g. "Værksted" added to the informaiotn: "Meter <n>".
- *       - Introduces IP configuration for Arduino Ethernet shield attached to Arduino UNO. Define ARDUINO_UNO_DEBUG
- * 0.1.1 - Web server and web client funktionality added.
- * 0.1.0 - Initial commit - This versino is a merger of two lab tests: "EnergyRegistration" and "LocalWebHook-with-server-for-Arduino".
- * 
- * 
  * 
  **** Ardhino Ethernet REV3 Pin definition/layout:***
  * Pin  0: Serial RX
@@ -111,17 +48,9 @@
 /* 
  * The interruptfunction has a catch: It enters a "while pin 2 is low" loop, and stays there, until the interrupt is released. 
  * Se further explanation in the README.md file.
- * 
- * Values are stored on SD in order to prevent too much data loss in case of a poweroutage or reststart. 
- * In order ot prevent SC update for every signle pulse registred, Updates are done for every 10 pulses or every 30 minutes 
- * (only if pulses have been registred)
- * 
  */
 #include <SPI.h> 
-#include <SD.h> 
-#include "SDAnything.h"
 #include <Ethernet.h>
-#include <SPI.h>
 
 
 /*
@@ -129,32 +58,25 @@
  *                                    D E F I N E    D E G U G G I N G
  * ######################################################################################################################################
 */
-//#define DEBUG        // If defined (remove // at line beginning) - Sketch await serial input to start execution, and print basic progress 
+#define DEBUG        // If defined (remove // at line beginning) - Sketch await serial input to start execution, and print basic progress 
                        //   status informations
-//#define WEB_DEBUG    // (Require definition of  DEBUG!) If defined - print detailed informatins about web server and web client activities
-//#define COUNT_DEBUG  // (Require definition of  DEBUG!)If defined - print detailed informatins about puls counting. 
-//#define ARDUINO_UNO_DEBUG  //If defined: MAC and IP address will be set accoring to the MAC address for the Arduino Ethernet shield
+#define WEB_DEBUG    // (Require definition of  DEBUG!) If defined - print detailed informatins about web server and web client activities
+#define COUNT_DEBUG  // (Require definition of  DEBUG!)If defined - print detailed informatins about puls counting. 
+#define ARDUINO_UNO_DEBUG  //If defined: MAC and IP address will be set accoring to the MAC address for the Arduino Ethernet shield
 /*
  * ######################################################################################################################################
  *                       C  O  N  F  I  G  U  T  A  B  L  E       D  E  F  I  N  I  T  I  O  N  S
  * ######################################################################################################################################
 */
 
-#define DATA_STRUCTURE_VERSION 2    // Version number to verify if data read from file corrospond to current structure defination.
-#define DATA_FILE_NAME "data.dat"  //The SD Library uses short 8.3 names for files. 
-
 #define NO_OF_CHANNELS 8                                                // Number of energy meters connected
 const int channelPin[NO_OF_CHANNELS] = {3,5,6,7,8,14,15,16};               // define which pin numbers are used for input channels
 const int PPKW[NO_OF_CHANNELS] = {1000,1000,1000,1000,1000,100,100,100};    //Variable for holding Puls Pr Kilo Watt (PPKW) for each channel (energy meter)
 
-#define SD_UPDATE_COUNTS 50              // Define how many pules to regisgter, before storing counts to SD Card
-#define TIME_BETWEEN_SD_UPDATES 1800000  // Time in millisecunds: 30 min = 30 x 60 x 1000 = 1800000 ms
-
 #define INTERRUPT_PIN 2
 #define CHIP_SELECT_PIN 4
 #define LED_BUILTIN 17
-#define HTTP_PORT_NUMBER 80
-#define ONBOARD_WEB_SERVER_PORT 80
+#define HTTP_CLIENT_PORT_NUMBER 8880
 
 /*
  * Incapsulate strings i a P(string) macro definition to handle strings in PROGram MEMory (PROGMEM) to reduce valuable memory  
@@ -167,119 +89,179 @@ char p_buffer[150];
 
                                                                     #ifdef  ARDUINO_UNO_DEBUG  //overwrite configuration for Arduino Ethernet REV3 board
                                                                       byte mac[] = { 0x90, 0xA2, 0xDA, 0x0D, 0x34, 0xF9};  //Ethernet Shield (Arduino)
-                                                                      IPAddress ip( 192, 168, 10, 123); // Ethernet Shield (Arduino)               
+                                                                      IPAddress ip( 192, 168, 10, 123); // Ethernet Shield (Arduino)
+                                                                      IPAddress webHookServer( 192, 168, 10, 114);          // IP address for energy-webhook server
                                                                     #else
 byte mac[] = { 0x90, 0xA2, 0xDA, 0x0D, 0x63, 0x15 };  // MAC address for Arduino Ethernet REV3 board
 IPAddress ip( 192, 168, 10, 146);                     // IP address for Arduino Ethernet REV3 board
+IPAddress webHookServer( 192, 168, 10, 114);          // IP address for energy-webhook server
                                                                     #endif
-IPAddress webHookServer( 192, 168, 10, 102);          // Local IP address for web server on QNAP-NAS-2 (192.168.10.x) NAP-NAS-2 
+#define WEBHOOK_SERVICE "/webhook.php" 
 
-EthernetClient webHookClient;
-EthernetServer localWebServer(ONBOARD_WEB_SERVER_PORT);
 
 /*
  *  #####################################################################################################################
  *                       V  A  R  I  A  B  L  E      D  E  F  I  N  A  I  T  O  N  S
  *  #####################################################################################################################
  */
-unsigned long led_Buildin_On;
 
-int SD_WriteCounter;            // Counter used to dertermine when meterData are to be writen to SD
-unsigned long SD_LastUpdated;   // Timer used to determine when meterData are to be writen to SD
+#define ERR_ETHERNET_BEGIN 1
+#define ERR_POST_POWERUP 2
+#define ERR_POST_DATA 3
+#define INPUT_OUTPUT_STRING_LENGHT 134
+
+EthernetClient webHookClient;
+
+unsigned long led_buildin_ON_at;
+unsigned long POST_at;
+boolean led_buildin_ON;
+
+String inputOutputString = "";      // a String to hold incoming data
+bool stringComplete = false;  // whether the string is complete
+
 
 /*
- * Define structure for energy meter counters
- * A remark for using the type (long) for counters. Using (int) would have been suficient, as metervaluse cannnot be
- * larger than 99999.99.
- * Howerver the choosen method of manually updating meter values, using the Arduino Ethernet library and the Serial.parseint(),
- * to parse the intered meter value from the ethernet stream, parsing the value as (long).
- * Experience showed that; "(int)variable = Serial.parseint();" did not work. The same for various attempts to convert (long) to (int).
- * Using (long) was simply the easies solution, all thoug it requires more RAM.
+ *  #####################################################################################################################
+ *                       V o l a t i l e    g l o b a l   v a r e i a b l e
+ *                                   used in interruptfunction
+ *  #####################################################################################################################
  */
-struct data_t
-   {
-     int structureVersion;
-     long pulseTotal[NO_OF_CHANNELS];    // For counting total number of pulses on each Chanel
-     long pulsePeriod[NO_OF_CHANNELS];   // For counting number of pulses betseen every e-mail update (day) on each chanel
-   } meterData;
-
-volatile boolean channelState[NO_OF_CHANNELS];  // Volatile global vareiable used in interruptfunction
+volatile boolean channelState[NO_OF_CHANNELS];
+volatile unsigned long timeStamp[NO_OF_CHANNELS];
 
 /*
  * ###################################################################################################
  *                       F  U  N  C  T  I  O  N      D  E  F  I  N  I  T  I  O  N  S
  * ###################################################################################################
 */
-/*
- * >>>>>>>>>>>>>>>>>   S E T     C O N F I G U R A T I O N   D E F A U L T S  <<<<<<<<<<<<<<<<<<<<<<<<
- * Configuration is "hardcoded" to minimize sketch size
- */
 
 /*
- * >>>>>>>>>>>>>>>>>   S E T     M E T E R   D A T A     D E F A U L T   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<
- * 
- * Inititialize the meterData structure and store it to SD Card.
- */
-void setMeterDataDefaults() {
-    meterData.structureVersion = 10 * DATA_STRUCTURE_VERSION + NO_OF_CHANNELS;
-    for (int ii = 0; ii < NO_OF_CHANNELS; ii++) {
-      meterData.pulseTotal[ii] = 0;
-      meterData.pulsePeriod[ii] = 0;
-    }
-  int characters = SD_reWriteAnything(DATA_FILE_NAME, meterData);
-}
+ * >>>>>>>>>>>>>>   P O S T    T O     E N N R G Y - W E B H O O K    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+ *
+ * Cahnnel number (meter number 0-8).
+ * The function include two types of _POST's, depending on the channel number.
+ * If channel number equals 0 (zero) the function will post: powerup=true otherwise, it will
+ * post: channel=<channel number>&millis=<time stamp>
+*/
+int postToEnergyWebhook( int channel) {
+  int returnValue = -1;
 
-/*
- * >>>>>>>>>>>>>>>>   G E T     Q U E R Y    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<    
- */
-void getQuery(EthernetClient localWebClient) {
-  int meterNumber = localWebClient.parseInt();
-  if ( 1 <= meterNumber && meterNumber <= NO_OF_CHANNELS ) {
-    long meterValue = localWebClient.parseInt();
-     if ( 0 <= meterValue && meterValue < 9999999) {
-      meterData.pulseTotal[meterNumber - 1] = meterValue * (PPKW[meterNumber - 1] / 100);
-    }
-  }
-}
+  if (channel == 0)
+    inputOutputString = "powerup=true";
+  else
+    inputOutputString = "channel=" + String(channel) + "&millis=" + String(timeStamp[channel]);
+                                                              #ifdef WEB_DEBUG
+                                                              Serial.print(P("inputOutput string: "));
+                                                              Serial.println(inputOutputString);
+                                                              Serial.print(P("Attempting to connect to webhook at: "));
+                                                              Serial.print(webHookServer);
+                                                              Serial.print(P(" Port: "));
+                                                              Serial.println(HTTP_CLIENT_PORT_NUMBER);
+                                                              #endif
+  if ( (returnValue = webHookClient.connect(webHookServer, HTTP_CLIENT_PORT_NUMBER))) {
+                                                              #ifdef WEB_DEBUG
+                                                              Serial.print(P("Return Value: "));
+                                                              Serial.print(returnValue);
+                                                              Serial.print(P(". Connected to Webhook: "));
+                                                              Serial.print(webHookServer);
+                                                              Serial.print(P(" Port: "));
+                                                              Serial.println(HTTP_CLIENT_PORT_NUMBER);
+                                                              #endif
+    webHookClient.print("POST ");           
+    webHookClient.print(WEBHOOK_SERVICE);           
+    webHookClient.println(" HTTP/1.1");
+    
+    webHookClient.print("Host: ");
+    webHookClient.println(webHookServer);
 
-/*
- * >>>>>>>>>>>>>>    U P D A T E     G O O G L E     S H E E T S    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
- */
-void updateGoogleSheets( boolean powerOn) {
-
-  webHookClient.stop(); //close any connection before send a new request. This will free the socket on the WiFi shield
-
-/*  
- * if there is a successful connetion post data. Otherwise print return code  
- */
-  if ( int returncode = webHookClient.connect(webHookServer, HTTP_PORT_NUMBER) == 1) {
-    webHookClient.print(P("GET /energyRegistrations/updateEnergyRegistrations?function=updateSheet&dataString="));
-    for ( int ii = 0; ii < NO_OF_CHANNELS; ii++) {
-      double meterTotal = (double)meterData.pulseTotal[ii] / (double)PPKW[ii];
-      webHookClient.print(meterTotal);
-      if ( ii < NO_OF_CHANNELS - 1) {
-        webHookClient.print(P(","));
-      } 
-    }
-    if ( powerOn == true)
-      webHookClient.print(P(",PowerUP"));
-
-    webHookClient.println(P(" HTTP/1.0"));
+    webHookClient.println("Content-Type: application/x-www-form-urlencoded");
+    webHookClient.println("Connection: close");
+    webHookClient.println("User-Agent: Arduino/1.0");
+    webHookClient.print("Content-Length: ");
+    webHookClient.println(inputOutputString.length());
     webHookClient.println();
+    webHookClient.print(inputOutputString);
+    webHookClient.println();    
+                                                              #ifdef WEB_DEBUG
+                                                              Serial.println(P("POST request send... "));
+                                                              Serial.println(P("Waiting for response from server."));
+                                                              #endif
 
     while ( !webHookClient.available() && webHookClient.connected()) {
       ; // Wait for webHook Server to return data while webHook Client is connected
     }
-    
+
     /*
-     * Print response from webhook to Serial
+     * Read response from webhook.
+     * Looking specific for a string staring with WEBHOOK nnn xxx. Where:
+     * nnn   | xxx
+     * 200 OK
+     * 102 Processing
+     * 100 error
+     * 400 Bad Request
      */
+                                                              #ifdef WEB_DEBUG
+                                                              Serial.println(P("Printing response , if any "));
+                                                              #endif
+    int inCharCount = 0;
     while (webHookClient.available()) {
-      char c = webHookClient.read();
+      char inChar = (char)webHookClient.read();
+      if ((inCharCount++ < (INPUT_OUTPUT_STRING_LENGHT - 2)) |  inChar == '\n') // Ensure that memory does not get overwritten, when adding characrtes to sting in next line
+        inputOutputString += inChar;
+      if (inChar == '\n' ) {
+                                                              #ifdef WEB_DEBUG
+                                                              Serial.print(inCharCount);
+                                                              Serial.print(" - ");
+                                                              Serial.print(inputOutputString);
+                                                              #endif
+        if ( inputOutputString.startsWith("WEBHOOK")) {
+          returnValue = inputOutputString.substring(8, 12).toInt();
+                                                              #ifdef WEB_DEBUG
+                                                              Serial.print(P("Return code received: "));
+                                                              Serial.println(returnValue);
+                                                              #endif
+        }
+        inputOutputString = "";
+        inCharCount = 0;
+
+      }
+
     }
+                                                              #ifdef WEB_DEBUG
+                                                              Serial.println(P("Closing connection "));
+                                                              #endif
     webHookClient.stop();
+
+
   } 
+                                                              #ifdef WEB_DEBUG
+                                                              else {
+                                                                Serial.println(P("Cannot connect to Server"));
+                                                              }
+                                                              #endif
+
+  return returnValue;
 }
+  
+
+void indicateError( int errPoint, int returnValue) {
+
+                                                              #ifdef DEBUG
+                                                                Serial.print(P("Error at: "));
+                                                                Serial.print(errPoint);
+                                                                Serial.print(P(". Return Valune: "));
+                                                                Serial.println(returnValue);
+                                                              #endif
+  while (true) {
+    digitalWrite(LED_BUILTIN, HIGH);
+    delay(250);
+    digitalWrite(LED_BUILTIN, LOW);
+    delay(250);
+  }
+
+
+}
+
 /*
  * ######################  I N T E R R U P T    F U N C T I O N  -   B E G I N     ####################
  * When a LOW pulse triggers the interrupt pin, status on all channels are read, as long as the pulse on the interrupt pin 
@@ -292,10 +274,12 @@ void updateGoogleSheets( boolean powerOn) {
  */
 
 void readChannelPins() {
+  unsigned long time = millis();
   while ( !digitalRead(INTERRUPT_PIN)) { 
     for (int ii = 0; ii < NO_OF_CHANNELS; ii++) {
       if (channelState[ii]) {
         channelState[ii] = digitalRead(channelPin[ii]);
+        timeStamp[ii] = time;
       }
     }
   }
@@ -319,43 +303,16 @@ void setup() {
                                                               while (!Serial) {
                                                                 ;  // Wait for serial connectionsbefore proceeding
                                                               }
-                                                              Serial.println(P(SKETCH_VERSION));
                                                               Serial.println(P("Hit [Enter] to start!"));
                                                               while (!Serial.available()) {
                                                                 ;  // In order to prevent unattended execution, wait for [Enter].
                                                               }
                                                               #endif
-  for (int ii=0; ii < NO_OF_CHANNELS; ii++) {  // Initialize input channels - and counter flagss
+  for (int ii=0; ii < NO_OF_CHANNELS; ii++) {  // Initialize input channels - and counter flags
     pinMode(channelPin[ii], INPUT_PULLUP);
     channelState[ii] = HIGH;
+    timeStamp[ii] = 0;
   }
-
-/*
- * Setup SD card communication ad see if card is present and can be initialized
- */
-  if ( !SD.begin(CHIP_SELECT_PIN)) {
-                                                              #ifdef DEBUG
-                                                              Serial.println(P("SD Card failed, or not present"));
-                                                              #endif
-    while (true) {  // Flashing builtin indicating error
-      digitalWrite(LED_BUILTIN, HIGH);
-      delay(100);
-      digitalWrite(LED_BUILTIN, LOW);
-      delay(100);  // Dont't do anyting more
-    }
-  }
-
-  char charactersRead = SD_readAnything( DATA_FILE_NAME, meterData);  // Read data counters or set data counters to default if not present or incorrect structure version
-  if ( meterData.structureVersion != 10 * DATA_STRUCTURE_VERSION + NO_OF_CHANNELS) 
-    setMeterDataDefaults();
-
-
-
-/*
- * Initialize variables for handling SD updates
- */
-  SD_WriteCounter = 0;
-  SD_LastUpdated = millis();
 
 /*
  * Initiate Ethernet connection
@@ -363,14 +320,32 @@ void setup() {
  */
   Ethernet.begin(mac, ip);
                                                               #ifdef DEBUG
-                                                              Serial.print(P("Ethernet ready at :"));
-                                                              Serial.println(Ethernet.localIP());
+                                                              if (ip == Ethernet.localIP()) {
+                                                                Serial.print(P("Ethernet ready at assighed IP address:"));
+                                                                Serial.println(Ethernet.localIP());
+                                                              } else {
+                                                                Serial.print(P("IP address issue! programmed IP address: "));
+                                                                Serial.print(ip);
+                                                                Serial.print(P(". Assigned IP address: "));
+                                                                Serial.println(Ethernet.localIP());
+                                                              }
                                                               #endif
-  localWebServer.begin();
+  if (ip != Ethernet.localIP())
+    indicateError(ERR_ETHERNET_BEGIN, 0);
+
+  int powerOn = 0;        // When postToEnergyWebhook( int channel) is called with a channel numbe value equals 0 (zero), powerup=true is posted.
+  int returnValue;
+  while ( (returnValue = postToEnergyWebhook( powerOn)) == 102) {
                                                               #ifdef DEBUG
-                                                              Serial.print(P("Listening on port: "));
-                                                              Serial.println(ONBOARD_WEB_SERVER_PORT);
+                                                              Serial.print(P("Waiting for webhook to process previous request."));
                                                               #endif
+    delay(10000);
+  }
+  if (returnValue != 200) {
+    indicateError(ERR_POST_POWERUP, returnValue);
+  }
+
+  POST_at = millis();
 
   // Initialize and arm interrupt.
   pinMode(INTERRUPT_PIN, INPUT_PULLUP);
@@ -379,13 +354,14 @@ void setup() {
   /*
    * Initialize variable for blinking LED_BUILTIN on every puls registration
    */
-  led_Buildin_On = millis();
+  led_buildin_ON_at = millis();
 
-  boolean powerOn = true;
-  updateGoogleSheets( powerOn);
 
+  // reserve 200 bytes for the inputOutputString:
+  inputOutputString.reserve(INPUT_OUTPUT_STRING_LENGHT);
 
   digitalWrite(LED_BUILTIN, LOW);
+  led_buildin_ON = false;
 }
 
 /*
@@ -398,7 +374,6 @@ void setup() {
  * ###################################################################################################
  */
 void loop() {
-  boolean reqToPush = false;
 /*
  * >>>>>>>>>>>>>>>>>>>>>>>>>  C o u n i n g    m o d u l e   -   B E G I N     <<<<<<<<<<<<<<<<<<<<<<<
  * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -406,25 +381,27 @@ void loop() {
 
  
   for (int ii = 0; ii < NO_OF_CHANNELS; ii++) {
-    if ( !channelState[ii]) {
-      channelState[ii] = HIGH;
-      led_Buildin_On = millis();
+    if ( !channelState[ii] && millis() > POST_at + (long)2000) {
+      int channel = ii + 1;
+      POST_at = millis();
+      int returnValue = postToEnergyWebhook( channel);
+      if (returnValue == 200)         // POST accepted by webhook 
+        channelState[ii] = HIGH;
+      else if (returnValue < 0) {
+        indicateError(ERR_POST_DATA, returnValue);
+      }
+      
+        
+      led_buildin_ON_at = millis();
       digitalWrite(LED_BUILTIN, HIGH);
-
-      SD_WriteCounter++;
-
-      meterData.pulseTotal[ii]++;
-      meterData.pulsePeriod[ii]++;
-                                                              #ifdef COUNT_DEBUG
+      led_buildin_ON = true;
+                                                         #ifdef COUNT_DEBUG
                                                               if ( ii == 0)
                                                                 Serial.println();
-                                                              Serial.print(P("Total pulses / kWh for channel "));
-                                                              Serial.print( ii +1);
-                                                              Serial.print(P(": "));
-                                                              Serial.print(meterData.pulseTotal[ii]);
-                                                              Serial.print(P(" / "));
-                                                              double meterTotal = (double)meterData.pulseTotal[ii] / (double)PPKW[ii];
-                                                              Serial.println(meterTotal, 3);
+                                                              Serial.print(P("Pulse registrated for channel "));
+                                                              Serial.print( channel);
+                                                              Serial.print(P(" at: "));
+                                                              Serial.println(timeStamp[ii]);
                                                               #endif
     }
   }
@@ -434,129 +411,10 @@ void loop() {
  * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
  */
 
-
-  if (millis() > led_Buildin_On + (long)150)
-    digitalWrite(LED_BUILTIN, LOW);
-  
-  if ( SD_WriteCounter >= SD_UPDATE_COUNTS  || millis() > SD_LastUpdated + TIME_BETWEEN_SD_UPDATES && SD_WriteCounter > 0 ) {
-    int characters = SD_reWriteAnything(DATA_FILE_NAME, meterData);
-    SD_WriteCounter = 0;
-    SD_LastUpdated = millis();
-  }
-
-/*
- * >>>>>>>>>>>>>>>>>>>>>>>>>> W E B     S E R V E R     B E G I N    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
- * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
- */
-  EthernetClient localWebClient = localWebServer.available();
-  
-  if (localWebClient) {
-    char keyWord1[14] = "pushToGoogle";
-    int  keyWordPtr1 = 0;
-    char keyWord2[12] = "meterValue";
-    int  keyWordPtr2 = 0;
-    while (localWebClient.connected())     {
-      if (localWebClient.available()) {
-        char c = localWebClient.read();
-                                                              #ifdef WEB_DEBUG
-                                                              Serial.print(c);
-                                                              #endif
-
-        if ( c == '\n') {
-                                                              #ifdef WEB_DEBUG
-                                                              Serial.println("\n\n>> New Line found - no further entreputation done\n\n");
-                                                              #endif
-          break;
-        }
-
-        if ( c == keyWord1[keyWordPtr1] )        // analize characterstream for presence of keyWord1 "pushToGoogle"
-          keyWordPtr1++;
-        else
-          keyWordPtr1 = 0;
-
-        if ( c == keyWord2[keyWordPtr2] )        // analize characterstream for presence of keyWord2 "meterValue"
-          keyWordPtr2++;
-        else
-          keyWordPtr2 = 0;
-      }
-
-      
-      if ( keyWordPtr1 == 12 || keyWordPtr2 == 10 ) {   // 12 / 10  på hinanden følgende karakterer i "keyWord" er fundet
-        if ( keyWordPtr1 == 12) {
-          reqToPush = true;                       // need to finish current web corrosponcence before pushing updates to wards Google. Setting flag to push data to webHook when finished.
-        } else {
-          char c = localWebClient.read();
-          if ( c == '?') {                  //A "?" after the keyword/ function (abs_path) indicate a meterValue has a quey. A meter number and value-
-            getQuery(localWebClient);
-          }
-        }
-
-        // "200 OK" means the resource was located on the server and the browser (or service consumer) should expect a happy response
-                                                              #ifdef WEB_DEBUG
-                                                              Serial.println(P("\n\nGot Keyword sending: 200 OK\n"));
-                                                              #endif
-/*        
- *   Send a standard http response header
- */
-        localWebClient.println(P("HTTP/1.1 200 OK"));
-        localWebClient.println(P("Content-Type: text/html"));
-        localWebClient.println(P("Connnection: close")); // do not reuse connection
-        localWebClient.println();
-          
-/* 
- *  send html page, displaying meter values:
- *  
- *  
- */
-
-                                                              #ifdef WEB_DEBUG
-                                                              Serial.println(P("\nSend htmp page, displaying values\n"));
-                                                              #endif
-
-        if ( reqToPush == true)
-          localWebClient.println(P("<HTML><head><title>PostToGoogle</title></head><body><h1>Posting following to Google Sheets</h1>"));
-        else
-          localWebClient.println(P("<HTML><head><title>MeterValues</title></head><body><h1>Energy meter values</h1>"));
-
-        for ( int ii = 0; ii < NO_OF_CHANNELS; ii++) {
-
-          localWebClient.println(P("<br><b>Meter </b>"));
-          localWebClient.println(ii + 1);
-          localWebClient.println(P("<b>:  </b>"));
-          double meterTotal = (double)meterData.pulseTotal[ii] / (double)PPKW[ii];
-          localWebClient.println(meterTotal);
-          localWebClient.print(P("<form action='/meterValue?' method='GET'>New value: <input type=text name='meter"));
-          char meter[2];
-          sprintf(meter, "%i", ii + 1);
-          localWebClient.print(meter);
-          localWebClient.println(P("'/> <input type=submit value='Opdater'/></form>"));
-// No endtag for <br> !?          localWebClient.println(P("</br>"));
-
-
-        }
-        // max length:    -----------------------------------------------------------------------------------------------------------------------------------------------------  (149 chars)
-        localWebClient.println(P("</body></html>"));
-
-        // Exit the loot
-        break;
-      }
+  if (led_buildin_ON) {
+    if (millis() > led_buildin_ON_at + (long)150) {
+      digitalWrite(LED_BUILTIN, LOW);
+      led_buildin_ON = false;
     }
-
-/*    
- *     Not verified if localWebClient.flush() actually empties the stream, therefor explicite read all characters.
- */
-    while ( localWebClient.available()) {
-      char c = localWebClient.read();
-    }
-    localWebClient.flush();
-    localWebClient.stop();
-  }  //>>>>>>>>>>>>>>>>>>>>>>> W E B     S E R V E R     E N D    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-
-  /*
-   * >>>>>>>>>>>>>>>>>>> U P D A T E     G O O G L E   S H E E T S    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-   */
-  if ( reqToPush == true) {
-    boolean powerOn = false;
-    updateGoogleSheets( powerOn);
   }
 }

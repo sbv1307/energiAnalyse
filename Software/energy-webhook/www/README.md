@@ -95,6 +95,15 @@ docker-php-ext-install pgsql -y #
 index.php - kun meter count and [Opdater] skal have fokus</br>
 Solved - Changed input type for meter number from text to hidden
 
+### Issue #2
+
+Adding Send a standard http response header:
+        localWebClient.println(P("HTTP/1.1 200 OK"));
+        localWebClient.println(P("Content-Type: text/html"));
+        localWebClient.println(P("Connnection: close")); // do not reuse connection
+        localWebClient.println();
+
+
 ---
 
 [^1]: Portnumber is specified in the docker-compose.yaml file.
