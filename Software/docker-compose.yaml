@@ -48,7 +48,7 @@ services:
       - back-end
 
   energy-webhook:
-    container_name: webhook
+    container_name: energy-webhook
     image: sbv1307/energy-webhook
     restart: always
     environment: *enviroment_vars

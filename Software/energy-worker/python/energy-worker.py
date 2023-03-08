@@ -35,6 +35,9 @@ def illigalKeyHandler( key, valye):
 ####################################################################################################
 ############################  M A I N #############################################################
 
+# Print startup infor til boot log
+print('Starting energy-worker version 2.0.0 - Initial version after version controle')
+
 # Creat postgres.ini file from environmentvariables if it does not exist
 if (not exists("/etc/postgres.ini")):
 

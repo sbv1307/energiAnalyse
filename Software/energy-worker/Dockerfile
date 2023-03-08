@@ -20,5 +20,10 @@ RUN pip install --root-user-action=ignore requests
 # COPY requirements.txt ./
 # RUN pip install --no-cache-dir -r requirements.txt
 
+
 COPY ./python .
-CMD [ "python", "energy-worker.py" ]
+
+RUN chmod 0744 crontab.root
+RUN crontab crontab.root
+
+CMD [ "/bin/sh", "-c", "crond; python energy-worker.py" ]

@@ -103,6 +103,12 @@ RUN pip install --root-user-action=ignore redis
 RUN pip install --root-user-action=ignore psycopg2-binary
 ````
 
+## **Versionhistory**
+
+2.0.0 - Initial version after introduction of version control / informaion
+
+- Installing cron and crontab job.
+
 ## ISSUES
 
 ### Issue #1 - Solved - energy-worker.py changed to handle a situation, where the PostgreSQL database is not ready.

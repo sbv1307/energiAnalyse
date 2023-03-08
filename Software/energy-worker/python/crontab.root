@@ -1,0 +1,11 @@
+#  Crontabfile for posting metervalues to google and updating meter-totals
+#  Remember to change lineseperator from CRLF to LF and to add an empty lines
+#  Before running: crontab crontab.root, change mode for crontab.root to 0744
+#  |--------- Minute (0-59)
+#  | |------- Hour (0-23)
+#  | | |----- Day of the month (1-31)
+#  | | | |--- Month of the year (1-12)
+#  | | | | |- Day of the week (0-6)  
+#  * * * * * command
+# * * * * * echo "Hello world" >> /var/log/cron.log 2>&1
+2 0 * * * python /usr/src/app/pgInsertTotals.py >> /var/log/cron.log 2>&1
