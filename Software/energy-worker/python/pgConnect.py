@@ -35,10 +35,10 @@ def pgConnect():
                     WHERE schemaname = 'public' \
                     AND tablename  = 'meter_metadata' \
                     OR tablename  = 'meter_status' \
+                    OR tablename  = 'meter_totals' \
                     OR tablename  = 'consumption'") 
         
-        if len(cur.fetchall()) == 3:
-            # Close connection and create tables.   
+        if len(cur.fetchall()) == 4:  
             returnValue = True
         # close the communication with the PostgreSQL
         cur.close()

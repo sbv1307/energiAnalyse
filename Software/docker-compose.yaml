@@ -15,6 +15,8 @@ x-environment: &enviroment_vars
   DATABASE_NAME: energy                 # Specify the same name as for POSTGRES_DB
   DATABASE_HOST: postgres-db  # Do not change. Need to med the same as the service name for the postgres image
 
+  GOOGLE_WEBHOOK_URL: http://192.168.10.102/energyRegistrations/updateEnergyRegistrations
+  GOOGLE_WEBHOOK: test
 
 services:
   redis-db:

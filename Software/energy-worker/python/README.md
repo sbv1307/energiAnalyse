@@ -114,3 +114,4 @@ It has turned out, that the postgres-db service has not finished setting op the 
 
 Relocate postgress.ini file to the "standard" location for configuration files. Til will avoid postgres.ini from being imported from the develup enviornnment.
 https://stackoverflow.com/questions/1024114/location-of-ini-config-files-in-linux-unix
+

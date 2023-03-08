@@ -51,6 +51,27 @@ def pgCreateTables():
                 REFERENCES meter_metadata (meter_no)
                 ON UPDATE CASCADE ON DELETE CASCADE
         )
+        """,
+        """ CREATE TABLE meter_totals (
+            index BIGSERIAL,
+            date DATE,
+            time TIME,
+            meter_no_1 DECIMAL NOT NULL,
+            meter_no_2 DECIMAL NOT NULL,
+            meter_no_3 DECIMAL NOT NULL,
+            meter_no_4 DECIMAL NOT NULL,
+            meter_no_5 DECIMAL NOT NULL,
+            meter_no_6 DECIMAL NOT NULL,
+            meter_no_7 DECIMAL NOT NULL,
+            daily_no_1 DECIMAL,
+            daily_no_2 DECIMAL,
+            daily_no_3 DECIMAL,
+            daily_no_4 DECIMAL,
+            daily_no_5 DECIMAL,
+            daily_no_6 DECIMAL,
+            daily_no_7 DECIMAL,
+            PRIMARY KEY (index)
+        )
         """)
     
     drop_commands = (

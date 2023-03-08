@@ -15,6 +15,7 @@ from pulseTimeStampHandler import pulseTimeStampHandler
 from powerUP_Handler import powerUP_Handler
 from pgUpdateMeterCount import pgUpdateMeterCount
 from pushToGoogle import pushToGoogle
+from pgInsertTotals import pgInsertTotals
 
 def processing_flush(tekst, n, index=5):
     sys.stdout.write("\rProcessing %s %s%s" % (tekst, (n % index)* ".", (index - 1 - (n % index))* " "))
@@ -27,9 +28,9 @@ def knownKeyHandler( key, value):
     return True
 
 def illigalKeyHandler( key, valye):
-    print(f'Illigal key: {key}. Value: {value}. Deleting key!')
+#    print(f'Illigal key: {key}. Value: {value}. Deleting key!')
     x = r.delete(key)
-    print(f'Key {key} deleted {x}')
+#    print(f'Key {key} deleted {x}')
 
 ####################################################################################################
 ############################  M A I N #############################################################
@@ -117,6 +118,7 @@ while continue_loop:
 
             elif "pushtogoogle" in s_key and "true" in value:
                 pushToGoogle()
+                pgInsertTotals()
                 x = r.delete(key)
 
             elif "powerup" in s_key and "true" in value:

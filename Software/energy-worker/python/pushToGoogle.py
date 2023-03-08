@@ -21,11 +21,9 @@ from pgGetMeterValues import pgGetMeterValues
 def pushToGoogle():
 
     request = """%s?function=updateSheet&dataString=""" % (os.environ['GOOGLE_WEBHOOK_URL'])
-    url = os.environ['GOOGLE_WEBHOOK_URL']
-
+    
     meterValues = pgGetMeterValues()
 
-    meterNo = 1
     for meterValue in meterValues:
         value = float(meterValue[0])
         request += str(value) + ","
