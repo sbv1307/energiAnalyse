@@ -42,17 +42,22 @@ RUN apk add postgresql-dev gcc python3-dev musl-dev
 
 ```
 
-## Version History
+## Software Version History
 
-Initial varsion: 
+3.0.2 - Initial version. Previous versions were unmanaged.  
 
 ### Issue #1 Solved
 
 Version 3.0.2: Push To Google. Before the current energy registration can be removed, it's required to be able to proceed sending daily reports to google.
 
 1 - Add a ´"post to Google" function to webhook.  Solved
-2 - add the required modules to the energy worker, which can create the required GET request. 
+2 - Add a table to PostgreSQL to collect energy meter totals (a kind of copy of the Google Sheet)
 
 ### Issue #2 - Solved
 
 README.md files for energy-webhook and -worker relocated, so they get copied to the docker image - this will reflect which verion is installed in the docker image.
+
+### Issue #3
+
+The cron job, which runs "post to Google" and opdate the Energy Meters Total tabel runs in UTC and not CET.
+Time Zone need to be added. 
