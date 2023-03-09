@@ -9,3 +9,4 @@
 #  * * * * * command
 # * * * * * echo "Hello world" >> /var/log/cron.log 2>&1
 2 0 * * * python /usr/src/app/pgInsertTotals.py >> /var/log/cron.log 2>&1
+

@@ -44,7 +44,8 @@ RUN apk add postgresql-dev gcc python3-dev musl-dev
 
 ## Software Version History
 
-3.0.2 - Initial version. Previous versions were unmanaged.  
+3.0.2 - Initial version. Previous versions were unmanaged. 
+3.0.3 - Tinezone added to the energy-worker image.
 
 ### Issue #1 Solved
 
@@ -57,7 +58,7 @@ Version 3.0.2: Push To Google. Before the current energy registration can be rem
 
 README.md files for energy-webhook and -worker relocated, so they get copied to the docker image - this will reflect which verion is installed in the docker image.
 
-### Issue #3
+### Issue #3 - Solved
 
 The cron job, which runs "post to Google" and opdate the Energy Meters Total tabel runs in UTC and not CET.
 Time Zone need to be added. 

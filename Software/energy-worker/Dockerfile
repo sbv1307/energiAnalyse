@@ -20,6 +20,8 @@ RUN pip install --root-user-action=ignore requests
 # COPY requirements.txt ./
 # RUN pip install --no-cache-dir -r requirements.txt
 
+RUN cp /usr/share/zoneinfo/Europe/Copenhagen /etc/localtime
+RUN echo "Europe/Copenhagen" >  /etc/timezone
 
 COPY ./python .
 
