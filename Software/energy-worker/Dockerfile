@@ -23,7 +23,9 @@ RUN pip install --root-user-action=ignore requests
 RUN cp /usr/share/zoneinfo/Europe/Copenhagen /etc/localtime
 RUN echo "Europe/Copenhagen" >  /etc/timezone
 
-COPY ./python .
+COPY ./python/*.py .
+COPY ./python/crontab.root .
+COPY ./python/README.md .
 
 RUN chmod 0744 crontab.root
 RUN crontab crontab.root

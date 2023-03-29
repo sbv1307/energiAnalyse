@@ -27,6 +27,8 @@ def pgUpdateMeterCount( key, value):
 
     # Get pulse_per_kWh from table meter_metadata 
     meter_metadata = pgGetMeterMetadata(meter_no)
+    if (meter_metadata == None):
+        return
     pulse_per_kWh = meter_metadata[2]
 
     # Get dataset from meter-status and extract data. 
@@ -47,11 +49,12 @@ def pgUpdateMeterCount( key, value):
 if __name__ == '__main__':
 
     n = 1
-    while n < 8:
+    while n < 9:
         meter_no = str(n)
         key = 'Chanel:' + meter_no + ':Timestamp'
         value = "123456"
         pgUpdateMeterCount( key, value)
         print(f'Meter counts for meter number {meter_no} is updated to: {value} ')
         n += 1
+    print("Meter counts updated.")
  

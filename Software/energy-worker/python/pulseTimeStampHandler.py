@@ -38,6 +38,8 @@ def pulseTimeStampHandler( key, value):
 
     # Get meter metadata from table meter_metadata and extract data
     meter_metadata = pgGetMeterMetadata(meter_no)
+    if (meter_metadata == None):
+        quit()
     pulse_per_kWh = meter_metadata[2]
     max_watt_consumption = meter_metadata[3]
     deviation_pct = meter_metadata[5]

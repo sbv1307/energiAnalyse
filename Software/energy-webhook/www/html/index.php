@@ -15,6 +15,7 @@ if (!$dbh) {
     die("Error in connection: " . pg_last_error());
 }
 
+// ToDo: When failed before postgres db is build - show info, inmstead of error message...
 
 $sql = "SELECT meter_no, kWh FROM meter_status ORDER BY meter_no";
 $result = pg_query($dbh, $sql);

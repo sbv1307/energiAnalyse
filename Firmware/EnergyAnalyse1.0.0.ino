@@ -210,6 +210,8 @@ int postToEnergyWebhook( int channel) {
         inputOutputString += inChar;
       if (inChar == '\n' ) {
                                                               #ifdef WEB_DEBUG
+                                                              Serial.print(inCharCount);
+                                                              Serial.print(" - ");
                                                               Serial.print(inputOutputString);
                                                               #endif
         if ( inputOutputString.startsWith("WEBHOOK")) {
@@ -228,8 +230,7 @@ int postToEnergyWebhook( int channel) {
                                                               #ifdef WEB_DEBUG
                                                               Serial.println(P("Communication successful - Closing connection "));
                                                               #endif
-    if (!webHookClient.connected())
-      webHookClient.stop();
+    webHookClient.stop();
 
 
   } 
@@ -241,10 +242,7 @@ int postToEnergyWebhook( int channel) {
 
   return returnValue;
 }
-
-/*
- * >>>>>>>>>>>>>>>>>>>>>>>>>>> i n d i c a t e  E r r o r   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
- */
+  
 
 void indicateError( int errPoint, int returnValue) {
 

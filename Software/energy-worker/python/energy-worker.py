@@ -81,7 +81,7 @@ while continue_loop:
     # Get list of available keys in Redis DB
     keylist = r.keys("*")
 
-    # Updating processbar.
+    # If debugging - Updating processbar.
     tekst = f'Available keys: {keylist}'
     n += 1
     processing_flush(tekst, n, index=50)
@@ -141,4 +141,6 @@ while continue_loop:
                 illigalKeyHandler( key, value)
     if (continue_loop):
         time.sleep(0.1)
+
+print("Worker has exited!")
 

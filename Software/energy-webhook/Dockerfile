@@ -1,7 +1,8 @@
-FROM arm32v7/php:7.2-apache
+# Dockerfile for sbv1307/energy-webhook image
+FROM arm32v7/php:7.4-apache
 
 #FROM arm32v7/php:apache
-LABEL "Name"="Apahe webhook Version=2.0.0"
+LABEL "Name"="Apahe webhook Version=3.0.0"
 
 # Update the package index files to get the latest list of available packages in the repositories.
 # Upgrade: downloads and installs the updates for each outdated package and dependency on your system.
@@ -26,8 +27,25 @@ RUN apt-get update && apt-get upgrade -y
 RUN apt-get install libpq-dev -y
 RUN docker-php-ext-install pgsql
 
+# Pre-requirements for installing PHP-MQTT. Installing composer and 7z 
+WORKDIR /usr/local/bin
+RUN apt-get install p7zip-full -y
+COPY ./composer.phar composer
+RUN chmod +x composer
+
+# Copy .bash_aliases and Invoked as an interactive non-login shell
+WORKDIR /root
+COPY ./bash_aliases .bash_aliases
+RUN echo "[ -f ~/.bash_aliases ] && . ~/.bash_aliases" >> /root/.bashrc
+
 # Set workking directory for the webhook server. /var/www/html/ is the default DocumentRoot
 WORKDIR /var/www/html/
 
-# Copy only .php files
-COPY ./www .
+# Install PHP-MQTT client. The package requires PHP version 7.4 or higher.
+RUN composer require php-mqtt/client
+
+# Copy only files from www/html
+COPY ./www/html/* .
+
+# Start PHP-MQTT subscribe service
+CMD php mqtt_subscribe.php

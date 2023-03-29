@@ -26,6 +26,8 @@ vi docker-compose.yaml
 Add the following contend:
 
 ```bash
+# Docker-compose file for building the "Energianalyse" program stack.
+
 version: '3.8'
 
 # Configual parameters for the services. This is just a way to group these settings an mage changes easy
@@ -75,6 +77,19 @@ services:
     networks:
       - back-end
 
+  mosquitto-mqtt:
+    container_name: mosquitto-mqtt
+    image: eclipse-mosquitto:2
+    restart: always
+    command: mosquitto -c /mosquitto-no-auth.conf
+    ports:
+      - 1883:1883
+    volumes:
+      - mosquitto-conf:/mosquitto/config
+      - mosquitto-data:/mosquitto/data
+    networks:
+      - front-end
+
   energy-webhook:
     container_name: energy-webhook
     image: sbv1307/energy-webhook
@@ -87,6 +102,7 @@ services:
     depends_on:
       - redis-db
       - energy-worker
+      - mosquitto-mqtt
     networks:
       - front-end
   
@@ -130,6 +146,9 @@ volumes:
     name: grafana-data
   energy-db:
     name: energy-db
+  mosquitto-data:
+    name: mosquitto-data
+
 
 ```
 
@@ -138,6 +157,26 @@ Start the docker container with `docker-compose up -d`.
 ```bash
 docker-compose up -d
 ```
+
+#### For debugging and developnemt insert
+
+```bash
+  energy-webhook:
+    .
+    .
+    volumes:      #v Verify that this is located under the energy-webhook service !!!!!!!
+      - ./energy-webhook/www:/var/www/html
+
+  energy-worker:
+    .
+    .
+    volumes:      #v Verify that this is located under the energy-worker service !!!!!!!
+      - ./energy-worker/python:/usr/src/app
+
+  
+```
+
+
 
 #### **Footnotes**
 =======

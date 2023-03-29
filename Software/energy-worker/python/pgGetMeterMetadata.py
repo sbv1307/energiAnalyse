@@ -5,6 +5,7 @@ from pgConfig import pgConfig
 def pgGetMeterMetadata(key):
     # Query Meter metadata from table meter_metadata
     conn = None
+    meter_metadata = None
 
     try:
         # read connection parameters
@@ -40,24 +41,26 @@ def pgGetMeterMetadata(key):
 
 if __name__ == '__main__':
     meter_no = 1
-    while meter_no < 8:
+    while meter_no < 9:
         meter_metadata = pgGetMeterMetadata(meter_no)
         print(f'Metadata       for meter number {meter_no} is {meter_metadata} ')
 
-        meter_name = meter_metadata[1]
-        print(f'meter_name     for meter number {meter_no} is {meter_name}')
+        if (meter_metadata != None):
 
-        pulse_per_kWh = meter_metadata[2]
-        print(f'pulse_per_kWh  for meter number {meter_no} is {pulse_per_kWh}')
+            meter_name = meter_metadata[1]
+            print(f'meter_name     for meter number {meter_no} is {meter_name}')
+
+            pulse_per_kWh = meter_metadata[2]
+            print(f'pulse_per_kWh  for meter number {meter_no} is {pulse_per_kWh}')
+            
+            max_energy = meter_metadata[3]
+            print(f'max_energy     for meter number {meter_no} is {max_energy}')
+            
+            power_factor = meter_metadata[4]
+            print(f'power_factor   for meter number {meter_no} is {power_factor}')
+            
+            deviation_pct = meter_metadata[5]
+            print(f'deviation_pct  for meter number {meter_no} is {deviation_pct}')
         
-        max_energy = meter_metadata[3]
-        print(f'max_energy     for meter number {meter_no} is {max_energy}')
-        
-        power_factor = meter_metadata[4]
-        print(f'power_factor   for meter number {meter_no} is {power_factor}')
-        
-        deviation_pct = meter_metadata[5]
-        print(f'deviation_pct  for meter number {meter_no} is {deviation_pct}')
-    
         print("-----------------------------------------------")
         meter_no += 1

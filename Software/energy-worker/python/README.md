@@ -8,6 +8,8 @@ The main program (energy-worker.py), will be the program, which initialize the e
 
 The loop will read Key - Value from the redis database and will handle the following Key - Value sets.
 
+Keys for timestame and metercount is expected to be: 'channel:[n]:timestamp' or 'channel:[n]:metercount'. Where [n] represent the meter number 1-7.
+
 | Keys which include: | Value | Esplanation |
 |----|----|----|
 | timestamp | 0 - 2^32 | The time in milli secunds received from the Arduino board. |
@@ -118,6 +120,6 @@ It has turned out, that the postgres-db service has not finished setting op the 
 
 ### Issue #2 - Solved - postgres.ini now saved in /etc
 
-Relocate postgress.ini file to the "standard" location for configuration files. Til will avoid postgres.ini from being imported from the develup enviornnment.
+Relocate postgress.ini file to the "standard" location for configuration files. This will avoid postgres.ini from being imported from the develup enviornnment.
 https://stackoverflow.com/questions/1024114/location-of-ini-config-files-in-linux-unix
 
