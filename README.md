@@ -146,6 +146,8 @@ volumes:
     name: grafana-data
   energy-db:
     name: energy-db
+  mosquitto-conf:
+    name: mosquitto-conf
   mosquitto-data:
     name: mosquitto-data
 
