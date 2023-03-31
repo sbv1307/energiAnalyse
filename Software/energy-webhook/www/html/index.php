@@ -70,6 +70,16 @@ pg_close($dbh);
     <input type='hidden' name='pushtogoogle' value='true'>
     <input type='submit' value='Send til Google'>
 </form>
+<form method='post' action='./webhook.php' target='dummyframe'>
+    <lable>Enable debugging.&emsp;&emsp;</label>
+    <input type='hidden' name='debug' value='true'>
+    <input type='submit' value='ENABLE'>
+</form>
+<form method='post' action='./webhook.php' target='dummyframe'>
+    <lable>Disable debugging.&emsp;&emsp;</label>
+    <input type='hidden' name='debug' value='false'>
+    <input type='submit' value='DISABLE'>
+</form>
 <p></p>
 </body>
 </html>

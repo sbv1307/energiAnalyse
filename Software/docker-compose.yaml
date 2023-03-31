@@ -77,10 +77,22 @@ services:
       - mosquitto-mqtt
     networks:
       - front-end
-    volumes:      #v Verify that this is located under the energy-webhook service !!!!!!!
-      - ./energy-webhook/www:/var/www/html
+#    volumes:      #v Verify that this is located under the energy-webhook service !!!!!!!
+#      - ./energy-webhook/www:/var/www
 
-  
+  energy-mqtthook:
+    container_name: energy-mqtthook
+    image: energy-mqtthook
+    restart: always
+    links:
+      - redis-db
+    depends_on:
+      - redis-db
+      - energy-worker
+      - mosquitto-mqtt
+    networks:
+      - front-end
+    
   energy-worker:
     container_name: energy-worker
     image: sbv1307/energy-worker 
@@ -94,8 +106,8 @@ services:
       - postgres-db
     networks:
       - back-end
-    volumes:      #v Verify that this is located under the energy-worker service !!!!!!!
-      - ./energy-worker/python:/usr/src/app
+#    volumes:      #v Verify that this is located under the energy-worker service !!!!!!!
+#      - ./energy-worker/python:/usr/src/app
 
   grafana:
     container_name: grafana

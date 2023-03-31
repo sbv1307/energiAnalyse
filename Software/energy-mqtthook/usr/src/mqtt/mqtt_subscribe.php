@@ -1,6 +1,6 @@
 <?php
 
-require('vendor/autoload.php');
+require('/var/mqtt/vendor/autoload.php');
 
 use \PhpMqtt\Client\MqttClient;
 use \PhpMqtt\Client\ConnectionSettings;
@@ -24,6 +24,19 @@ function setKeyValue( $fTopic, $fValue) {
     }
 }
 
+function mosquittoTest( $topic, $message) {
+    $fRedis = $GLOBALS['redis'];
+    $logFile = fopen("/var/log/mqttlog", "a");
+    $logText = 'MQTT Topic: ' . $topic . ' - Message: ' . $message . "\n";
+    fwrite( $logFile, $logText);
+    fclose($logFile);
+    if ($fRedis->get("debug")) {
+        echo "MQTT Topic: ", $topic , " written to file /var/log/mqttlog. ";
+        echo "Message: ", $message, "\n";
+    }
+
+}
+
 if ($redis->get("debug")) {
     echo "\nDebug enabled!\n";
 }
@@ -31,6 +44,11 @@ if ($redis->get("debug")) {
 $mqtt = new \PhpMqtt\Client\MqttClient($server, $port, $clientId);
 
 $mqtt->connect();
+
+$sTopic = 'mosquittotest';
+$mqtt->subscribe($sTopic, function ($topic, $message, $retained, $matchedWildcards) {
+    mosquittoTest( $topic, $message);
+}, 0);
 
 $sTopic = 'channel/+/timestamp';
 $mqtt->subscribe($sTopic, function ($topic, $message, $retained, $matchedWildcards) {
