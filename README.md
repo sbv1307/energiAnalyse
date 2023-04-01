@@ -56,6 +56,8 @@ services:
     networks:
       - front-end
       - back-end
+    volumes:
+      - redis-data:/data
 
   postgres-db:
     image: postgres
@@ -87,6 +89,7 @@ services:
     volumes:
       - mosquitto-conf:/mosquitto/config
       - mosquitto-data:/mosquitto/data
+      - mosquitto-log:/mosquitto/log
     networks:
       - front-end
 
@@ -105,7 +108,28 @@ services:
       - mosquitto-mqtt
     networks:
       - front-end
-  
+#    volumes:      #v Verify that this is located under the energy-webhook service !!!!!!!
+#      - ./energy-webhook/www:/var/www
+
+  energy-mqtthook:
+    container_name: energy-mqtthook
+    image: energy-mqtthook
+    restart: always
+    environment:      # Set environment variables: Se more info in main README.md
+      - MAIL_SMTP_HOST=${MAIL_SMTP_HOST}
+      - MAIL_SMTP_USERNAME=${MAIL_SMTP_USERNAME}
+      - MAIL_SMTP_PASSWORD=${MAIL_SMTP_PASSWORD}
+    links:
+      - redis-db
+    depends_on:
+      - redis-db
+      - energy-worker
+      - mosquitto-mqtt
+    networks:
+      - front-end
+    volumes:    # Verify that his i located under the energy-mqtthook service !!!!!
+      - ./energy-mqtthook/usr/src/mqtt:/usr/src/mqtt
+    
   energy-worker:
     container_name: energy-worker
     image: sbv1307/energy-worker 
@@ -119,6 +143,8 @@ services:
       - postgres-db
     networks:
       - back-end
+#    volumes:      #v Verify that this is located under the energy-worker service !!!!!!!
+#      - ./energy-worker/python:/usr/src/app
 
   grafana:
     container_name: grafana
@@ -142,6 +168,8 @@ networks:
     name: back-end
 
 volumes:
+  redis-data:
+    name: redis-data
   energy-grafana-data:
     name: grafana-data
   energy-db:
@@ -150,11 +178,25 @@ volumes:
     name: mosquitto-conf
   mosquitto-data:
     name: mosquitto-data
+  mosquitto-log:
+    name: mosquitto-log
 
 
 ```
 
-Start the docker container with `docker-compose up -d`.
+Before starting the docker container, set the following environment variables in the system on which the docker container will run - Remember to export the environmentvariables:
+ 
+ ````bash
+MAIL_SMTP_HOST=*smtp server name* # e.g. smtp.gmail.com
+export MAIL_SMTP_HOST
+MAIL_SMTP_USERNAME=*SMTP username*  # typically an e-mail address.
+export MAIL_SMTP_USERNAME
+MAIL_SMTP_PASSWORD=*SMTP password*
+export MAIL_SMTP_PASSWORD
+
+ ````
+ 
+ S tart the docker container with `docker-compose up -d`.
 
 ```bash
 docker-compose up -d

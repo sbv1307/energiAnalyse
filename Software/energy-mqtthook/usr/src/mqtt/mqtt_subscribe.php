@@ -1,6 +1,7 @@
 <?php
 
 require('/var/mqtt/vendor/autoload.php');
+require __DIR__ . '/sendMail.php';
 
 use \PhpMqtt\Client\MqttClient;
 use \PhpMqtt\Client\ConnectionSettings;
@@ -37,6 +38,20 @@ function mosquittoTest( $topic, $message) {
 
 }
 
+function notifyStatus( $topic, $message) {
+    $fRedis = $GLOBALS['redis'];
+    if ($fRedis->get("debug")) 
+        echo "arduino status modtaget: ", $message , ". Sender mail...\n";
+    $to = "pist@eltt.dk";
+    $subject = "Energianalyse MQTT status: " . $message;
+    $mailMessage = "Energianalyse: MQTT modtaget fra: " . $topic . ". Message: " . $message . "<br>If Disconnected - Arduino might need a restart.";
+    $success = sendMail($to, $subject, $mailMessage);
+    if (!$success) {
+        $errorMessage = error_get_last()['message'];
+        echo $errorMessage , "\n";
+    }
+}
+
 if ($redis->get("debug")) {
     echo "\nDebug enabled!\n";
 }
@@ -45,7 +60,12 @@ $mqtt = new \PhpMqtt\Client\MqttClient($server, $port, $clientId);
 
 $mqtt->connect();
 
-$sTopic = 'mosquittotest';
+$sTopic = 'arduino/status';
+$mqtt->subscribe($sTopic, function ($topic, $message, $retained, $matchedWildcards) {
+    notifyStatus( $topic, $message);
+}, 0);
+
+$sTopic = 'mosquitto/test';
 $mqtt->subscribe($sTopic, function ($topic, $message, $retained, $matchedWildcards) {
     mosquittoTest( $topic, $message);
 }, 0);

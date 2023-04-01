@@ -11,10 +11,14 @@ IPAddress ip(192, 168, 10, 123);
 EthernetClient ethClient;
 PubSubClient mqttClient(ethClient);
 
-const long interval = 2000;
+const long interval = 5000;
 unsigned long previousMillis = 0;
+unsigned long lastReconnectAttempt = 0;
+unsigned long lastRepublish = 0;
+
 unsigned long mqttDelay = 0;
 int count = 0;
+int totalCount = 0;
 
 
 
@@ -24,6 +28,22 @@ int count = 0;
  * ###################################################################################################
 */
 
+boolean reconnect() {
+  Serial.print("Attepmt to connect as: ");
+  // Create random clinet ID
+  String clientId= "arduino-";
+  clientId += String( random(0xffff), HEX);
+  Serial.print(clientId);
+  if ( mqttClient.connect( clientId.c_str(), "", "", "arduino/status", 0, true, "disconnected")) {
+    Serial.println(" - Connected");
+    count = 0;
+  } else {
+    Serial.print(". - Failed! rc = ");
+    Serial.print(mqttClient.state());
+    Serial.println(". Tri again in 5 seconds");
+  }
+  return mqttClient.connected();
+}
 
 /*
  * ###################################################################################################
@@ -70,7 +90,7 @@ void setup()
   mqttClient.setServer("192.168.10.132", 1883);
   
 
-
+/*
   if (mqttClient.connect("arduino-1")) {
     // connection succeeded
     Serial.println("Connected ");
@@ -85,6 +105,7 @@ void setup()
     Serial.print("Connection failed: ");
     Serial.println( mqttClient.state());
   }
+*/
 
 }
 
@@ -102,53 +123,77 @@ void loop() {
   unsigned long currentMillis = millis();
 
   if (currentMillis - previousMillis >= interval) {
-    // save the last time a message was sent
-    previousMillis = currentMillis;
-
-    count++;
-    Serial.println();
-    Serial.print("Count: ");
-    Serial.print(count);
-    Serial.print(". MQTT delay: ");
-    Serial.println(mqttDelay);
-
-    for ( int i = 1; i < 2; i++ ) {
-      String sTopic = String("channel/") + i + String("/timestamp");
-      char cTopic[22] = "";
-      sTopic.toCharArray(cTopic, 22);
-      Serial.print("Sending to: ");
-      Serial.print(cTopic);
-
-      char cPayload[14] = "";
-      sprintf(cPayload, "%u", millis());
-      Serial.print(". Message: ");
-      Serial.println(cPayload);
-      
-      boolean rc = mqttClient.publish(cTopic, cPayload);
-      if (!rc) {
-        Serial.print("Publish failed - ");
-        int stateValue = mqttClient.state();
-        Serial.println( stateValue);
-        if (stateValue == 0) {
-          Serial.println("Republishing!");
-          delay(2000);
-          i--;
-        } else {
-          Serial.println("Stop publishing.");
-          while(1);
+    if ( !mqttClient.connected()) {
+      if ( currentMillis - lastReconnectAttempt > 5000) {
+        lastReconnectAttempt = currentMillis;
+        if (reconnect()) {
+          lastReconnectAttempt = 0;
         }
-
       }
-    }
-    
-
-    // call loop
-    Serial.print("Call loop - ");
-    if ( mqttClient.loop()) {
-      Serial.println("Still connected.");
     } else {
-      Serial.println("NOT connected any longer!!! Stop further publishing.");
-      while (1);  
+      // save the last time a message was sent
+      previousMillis = currentMillis;
+
+      count++;
+      totalCount++;
+      Serial.println();
+      Serial.print("Total counts: ");
+      Serial.print(totalCount);
+      Serial.print(". Count: ");
+      Serial.print(count);
+      Serial.print(". MQTT delay: ");
+      Serial.println(mqttDelay);
+
+      for ( int i = 1; i < 8; i++ ) {
+        if (currentMillis - lastRepublish > 2000) {
+          lastRepublish = 0;
+          String sTopic = String("channel/") + i + String("/timestamp");
+          char cTopic[22] = "";
+          sTopic.toCharArray(cTopic, 22);
+          Serial.print("Sending to: ");
+          Serial.print(cTopic);
+
+          char cPayload[14] = "";
+          ltoa(currentMillis, cPayload, 10);
+
+          // sprintf(cPayload, "%u", currentMillis);
+          Serial.print(". Message: ");
+          Serial.println(cPayload);
+          
+          boolean rc = mqttClient.publish(cTopic, cPayload);
+          if (!rc) {
+            Serial.print("Publish failed - ");
+            int stateValue = mqttClient.state();
+            Serial.println( stateValue);
+            if (stateValue == 0) {
+              Serial.println("Republishing in 2 sec.!");
+              lastRepublish = currentMillis;
+              i--;
+            } else {
+              if ( !mqttClient.connected()) {
+                if ( currentMillis - lastReconnectAttempt > 5000) {
+                  lastReconnectAttempt = currentMillis;
+                  if (reconnect()) {
+                    lastReconnectAttempt = 0;
+                  }
+                }
+              } 
+            }
+
+          }
+        }
+      }
+      
+
+      // call loop
+      Serial.print("Call loop - ");
+      if ( mqttClient.loop()) {
+        Serial.println("Still connected.");
+      } else {
+        Serial.println("NOT connected any longer!!! Reconnecting...");
+        reconnect();
+      }
+
     }
 
   }

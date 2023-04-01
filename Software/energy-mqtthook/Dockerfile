@@ -37,6 +37,10 @@ RUN chmod +x composer
 WORKDIR /var/mqtt
 RUN composer require php-mqtt/client
 
+# Install PHPMailer. https://github.com/PHPMailer/PHPMailer
+WORKDIR /var/PHPMailer
+RUN composer require phpmailer/phpmailer
+
 # Copy .bash_aliases and Invoked as an interactive non-login shell
 WORKDIR /root
 COPY ./bash_aliases .bash_aliases
@@ -48,4 +52,5 @@ WORKDIR /usr/src/mqtt
 # Copy only files from www/html
 COPY ./usr/src/mqtt/* .
 
+# Start MQTT Subseribe.
 CMD [ "php" , "mqtt_subscribe.php" ]

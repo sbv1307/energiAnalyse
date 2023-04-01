@@ -12,6 +12,6 @@ $clientId = 'test-publisher';
 
 $mqtt = new \PhpMqtt\Client\MqttClient($server, $port, $clientId);
 $mqtt->connect();
-$mqtt->publish('mosquittotest', 'Hello World!', 0);
+$mqtt->publish('mosquitto/test', 'Hello World!', 0);
 $mqtt->disconnect();
 ?>
