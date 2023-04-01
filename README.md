@@ -108,8 +108,6 @@ services:
       - mosquitto-mqtt
     networks:
       - front-end
-#    volumes:      #v Verify that this is located under the energy-webhook service !!!!!!!
-#      - ./energy-webhook/www:/var/www
 
   energy-mqtthook:
     container_name: energy-mqtthook
@@ -127,8 +125,6 @@ services:
       - mosquitto-mqtt
     networks:
       - front-end
-    volumes:    # Verify that his i located under the energy-mqtthook service !!!!!
-      - ./energy-mqtthook/usr/src/mqtt:/usr/src/mqtt
     
   energy-worker:
     container_name: energy-worker
@@ -143,8 +139,6 @@ services:
       - postgres-db
     networks:
       - back-end
-#    volumes:      #v Verify that this is located under the energy-worker service !!!!!!!
-#      - ./energy-worker/python:/usr/src/app
 
   grafana:
     container_name: grafana
@@ -208,14 +202,20 @@ docker-compose up -d
   energy-webhook:
     .
     .
-    volumes:      #v Verify that this is located under the energy-webhook service !!!!!!!
+    volumes:      #v Verify that this is located under the energy-webhook service !
       - ./energy-webhook/www:/var/www/html
 
   energy-worker:
     .
     .
-    volumes:      #v Verify that this is located under the energy-worker service !!!!!!!
+    volumes:      #v Verify that this is located under the energy-worker service !
       - ./energy-worker/python:/usr/src/app
+
+  energy-mqtthook:
+    .
+    .
+    volumes:    # Verify that his i located under the energy-mqtthook service !!!!!
+      - ./energy-mqtthook/usr/src/mqtt:/usr/src/mqtt
 
   
 ```
