@@ -32,6 +32,9 @@ WORKDIR /root
 COPY ../bash_aliases .bash_aliases
 RUN echo "[ -f ~/.bash_aliases ] && . ~/.bash_aliases" >> /root/.bashrc
 
+# AH00558: apache2: Could not reliably determine the server's fully qualified domain name
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+
 # Set workking directory for the webhook server. /var/www/html/ is the default DocumentRoot
 WORKDIR /var/www/html/
 

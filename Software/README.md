@@ -11,7 +11,7 @@
 
 ````
 
-energy-webhook issue - add the following to dockerfile:
+energy-webhook issue - SOLVED: the following has been added to dockerfile:
 
 ````bash
 RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
