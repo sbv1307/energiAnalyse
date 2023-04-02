@@ -28,25 +28,9 @@ Add the following contend:
 ```bash
 # Docker-compose file for building the "Energianalyse" program stack.
 
+# Generel note aboout environment settings - see README.md file about .env file
+
 version: '3.8'
-
-# Configual parameters for the services. This is just a way to group these settings an mage changes easy
-# POSTGRES... environemtn variables are used in the postgres-db, energy-webhook and energy-worker services.
-# DATABASE... environment variables are used in the grafana service
-x-environment: &enviroment_vars
-  POSTGRES_USER: energy                 # Decide you own username
-  POSTGRES_PASSWORD: energy             # Be aware of using special characteres.
-                                        # Special characters might be interpreted in various ways be the OS. 
-  POSTGRES_DB: energy                   # Decite you own database name
-  POSTGRES_HOST: postgres-db  # Do not change. Need to med the same as the service name for the postgres image
-
-  DATABASE_USER: energy                 # Specify the same name as for POSTGRES_USER
-  DATABASE_PASS: energy                 # Specify the same name as for POSTGRES_PASSWORD
-  DATABASE_NAME: energy                 # Specify the same name as for POSTGRES_DB
-  DATABASE_HOST: postgres-db  # Do not change. Need to med the same as the service name for the postgres image
-
-  GOOGLE_WEBHOOK_URL: http://192.168.10.102/energyRegistrations/updateEnergyRegistrations
-  GOOGLE_WEBHOOK: test
 
 services:
   redis-db:
@@ -66,7 +50,11 @@ services:
     networks:
       - front-end
       - back-end
-    environment: *enviroment_vars
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=postgres-db   # DO NOT CHANGE!. Need to med the same as the service name for the postgres image
     volumes:
       - energy-db:/var/lib/postgresql/data
 
@@ -97,7 +85,11 @@ services:
     container_name: energy-webhook
     image: sbv1307/energy-webhook
     restart: always
-    environment: *enviroment_vars
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=postgres-db   # DO NOT CHANGE!. Need to med the same as the service name for the postgres image
     links:
       - redis-db
     ports:
@@ -111,9 +103,9 @@ services:
 
   energy-mqtthook:
     container_name: energy-mqtthook
-    image: energy-mqtthook
+    image: sbv1307/energy-mqtthook
     restart: always
-    environment:      # Set environment variables: Se more info in main README.md
+    environment:
       - MAIL_SMTP_HOST=${MAIL_SMTP_HOST}
       - MAIL_SMTP_USERNAME=${MAIL_SMTP_USERNAME}
       - MAIL_SMTP_PASSWORD=${MAIL_SMTP_PASSWORD}
@@ -130,7 +122,13 @@ services:
     container_name: energy-worker
     image: sbv1307/energy-worker 
     restart: always
-    environment: *enviroment_vars
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_HOST=postgres-db   # DO NOT CHANGE!. Need to med the same as the service name for the postgres image
+      - GOOGLE_WEBHOOK_URL= http://192.168.10.102/energyRegistrations/updateEnergyRegistrations
+      - GOOGLE_WEBHOOK=test
     links:
       - redis-db
       - postgres-db
@@ -144,7 +142,11 @@ services:
     container_name: grafana
     image: grafana/grafana
     restart: always
-    environment: *enviroment_vars
+    environment:
+      - DATABASE_USER=${POSTGRES_USER}           # Specify the same name as for POSTGRES_USER
+      - DATABASE_PASS=${POSTGRES_PASSWORD}       # Specify the same name as for POSTGRES_PASSWORD
+      - DATABASE_NAME=${POSTGRES_DB}             # Specify the same name as for POSTGRES_DB
+      - DATABASE_HOST=postgres-db  # DO NOT CHANGE!. Need to med the same as the service name for the postgres image
     volumes:
       - energy-grafana-data:/var/lib/grafana
     ports:
@@ -175,18 +177,27 @@ volumes:
   mosquitto-log:
     name: mosquitto-log
 
-
 ```
 
-Before starting the docker container, set the following environment variables in the system on which the docker container will run - Remember to export the environmentvariables:
+Before starting the docker container, create a .env file in the same directory as the docker-compose.yaml file.
+
+
+```bash
+vi .env
+```
+
+Add the following contend:
+
+
  
  ````bash
-MAIL_SMTP_HOST=*smtp server name* # e.g. smtp.gmail.com
-export MAIL_SMTP_HOST
-MAIL_SMTP_USERNAME=*SMTP username*  # typically an e-mail address.
-export MAIL_SMTP_USERNAME
-MAIL_SMTP_PASSWORD=*SMTP password*
-export MAIL_SMTP_PASSWORD
+POSTGRES_USER=*Username*            # Decide you own username
+POSTGRES_PASSWORD=*User password*   # Be aware of using special characteres.
+POSTGRES_DB=*Database name*         # Decide you own database name
+MAIL_SMTP_HOST=*SMTP hostname*      # For google SMTP: smtp.gmail.com
+MAIL_SMTP_USERNAME=*SMTP username*  # Typically an e-mail address
+MAIL_SMTP_PASSWORD=*SMTP Password*  #
+
 
  ````
  
@@ -196,14 +207,14 @@ export MAIL_SMTP_PASSWORD
 docker-compose up -d
 ```
 
-#### For debugging and developnemt insert
+### **For debugging and developnemt insert**
 
 ```bash
   energy-webhook:
     .
     .
     volumes:      #v Verify that this is located under the energy-webhook service !
-      - ./energy-webhook/www:/var/www/html
+      - ./energy-webhook/www:/var/www
 
   energy-worker:
     .
@@ -220,6 +231,18 @@ docker-compose up -d
   
 ```
 
+#### **Usefull aliases**
+
+````bash
+alias mountpro="sudo mount.cifs //192.168.n.n/Software /home/pi/energiAnalyse  -o user=IoT password=arduino"
+alias dcup='docker-compose up -d'
+alias dcdown='docker-compose down'
+alias dclogs='docker-compose logs -f'
+alias dockerweb='docker exec -it $(docker ps -q --filter "name=energy-webhook") bash'
+alias dockerworker='docker exec -it $(docker ps -q --filter "name=energy-worker") sh'
+alias dockerattach='docker attach $(docker ps -q --filter "name=energy-worker")'
+alias dockermqtt='docker exec -it $(docker ps -q --filter "name=energy-mqtthook") bash'
+````
 
 
 #### **Footnotes**

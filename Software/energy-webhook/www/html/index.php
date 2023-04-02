@@ -12,7 +12,8 @@ $postgres_host = getenv('POSTGRES_HOST', true) ?: getenv('POSTGRES_HOST');
 $dbh = pg_connect("host=$postgres_host dbname=$postgres_db user=$postgres_user password=$postgres_password");
 
 if (!$dbh) {
-    die("Error in connection: " . pg_last_error());
+    echo "PostgreSQL database might not be ready for connections yet. Try again in a few minutes.";
+    die("Error in connection to PostgreSQL database: " . pg_last_error());
 }
 
 // ToDo: When failed before postgres db is build - show info, inmstead of error message...
@@ -21,8 +22,10 @@ $sql = "SELECT meter_no, kWh FROM meter_status ORDER BY meter_no";
 $result = pg_query($dbh, $sql);
 
 if (!$result) {
+    echo "PostgreSQL database might not be ready for connections yet. Try again in a few minutes.";
     die("Error in SQL query: " . pg_last_error());
 } 
+
 
 ?>
 <html>
@@ -34,8 +37,8 @@ if (!$result) {
 <iframe name="dummyframe" id="dummyframe" style="display: none;"></iframe>    
 
 <h1>Updater kWh for energimetre</h1>
-<h2>Enter new values without decimaldeberator!!!</h2>
-The last two didgets will be decimal values...
+<h2>Enter new values without decimaldeberator and manually reload to reflect changes!!!</h2> 
+The last two didgets will be converted to decimal values...
 
 
 <?php
@@ -64,22 +67,43 @@ pg_free_result($result);
 // close connection
 pg_close($dbh);
 
+//Connecting to Redis
+$redis = new Redis(['host' => 'redis-db']);
+
+
+
+
 ?>
+<p>
 <form method='post' action='./webhook.php' target='dummyframe'>
     <lable>Send Energy meter data to Google sheet.&emsp;&emsp;</label>
     <input type='hidden' name='pushtogoogle' value='true'>
     <input type='submit' value='Send til Google'>
 </form>
+</p>
+<?php
+if ($redis->get("debug")) {
+?>
 <form method='post' action='./webhook.php' target='dummyframe'>
-    <lable>Enable debugging.&emsp;&emsp;</label>
-    <input type='hidden' name='debug' value='true'>
-    <input type='submit' value='ENABLE'>
-</form>
-<form method='post' action='./webhook.php' target='dummyframe'>
-    <lable>Disable debugging.&emsp;&emsp;</label>
     <input type='hidden' name='debug' value='false'>
-    <input type='submit' value='DISABLE'>
+    <input type='submit' value='DISABLE debug'>
+    <lable>Disable debugging.&emsp;&emsp;</label>
 </form>
+
+
+<?php
+} else  {
+?>
+<form method='post' action='./webhook.php' target='dummyframe'>
+    <input type='hidden' name='debug' value='true'>
+    <input type='submit' value='ENABLE debug'>
+    <lable>Enable debugging.&emsp;&emsp;</label>
+</form>
+
+
+<?php
+}
+?>
 <p></p>
 </body>
 </html>

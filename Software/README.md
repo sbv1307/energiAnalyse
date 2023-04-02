@@ -1,5 +1,22 @@
 # Energimåling - Software
 
+## **Issues**
+
+- From *docker-compose logs -f* at *docker-compose up -d* 
+
+````bash
+ redis-db           | 1:M 02 Apr 2023 04:11:51.294 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+
+ energy-webhook     | AH00558: apache2: Could not reliably determine the server's fully qualified domain name, using 192.168.96.5. Set the 'ServerName' directive globally to suppress this message
+
+````
+
+energy-webhook issue - add the following to dockerfile:
+
+````bash
+RUN echo "ServerName localhost" >> /etc/apache2/apache2.conf
+````
+
 ## Issues when porting form x86_64 Linux to armv7l Linux
 
 ## Energy-worker module
@@ -8,7 +25,7 @@ Based on python, but require redis and postgresq.
 
 ### Dockerfile Raspberry PI Python pip install "PermissionError: [Errno 1] Operation not permitted"
 
-#### First issue:
+#### First issue
 
 The python package installer, pip has an issue with the libseccomp2, which is not updated yet for the Raspbian distribution, bun can be downloaded form derbian-backports as a workaround.
 

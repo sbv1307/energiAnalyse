@@ -27,16 +27,6 @@ RUN apt-get update && apt-get upgrade -y
 RUN apt-get install libpq-dev -y
 RUN docker-php-ext-install pgsql
 
-# Pre-requirements for installing PHP-MQTT. Installing composer and 7z 
-#WORKDIR /usr/local/bin
-#RUN apt-get install p7zip-full -y
-#COPY ../composer.phar composer
-#RUN chmod +x composer
-
-# Install PHP-MQTT client. The package requires PHP version 7.4 or higher.
-#WORKDIR /var/mqtt
-#RUN composer require php-mqtt/client
-
 # Copy .bash_aliases and Invoked as an interactive non-login shell
 WORKDIR /root
 COPY ../bash_aliases .bash_aliases
