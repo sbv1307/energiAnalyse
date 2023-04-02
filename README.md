@@ -200,8 +200,14 @@ MAIL_SMTP_PASSWORD=*SMTP Password*  #
 
 
  ````
- 
- S tart the docker container with `docker-compose up -d`.
+
+Verify that the environment variables is succesfull read by docker compose.
+
+````bash
+docker compose config
+````
+
+ Start the docker container with `docker-compose up -d`.
 
 ```bash
 docker-compose up -d
