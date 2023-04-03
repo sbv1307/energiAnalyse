@@ -7,6 +7,7 @@
 // Update these with values suitable for your network.
 byte mac[]    = {  0x90, 0xA2, 0xDA, 0x0D, 0x34, 0xF9 };
 IPAddress ip(192, 168, 10, 123);
+IPAddress mqttClientIP( 192, 168, 10, 132);
 
 EthernetClient ethClient;
 PubSubClient mqttClient(ethClient);
