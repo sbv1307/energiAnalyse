@@ -244,12 +244,24 @@ alias mountpro="sudo mount.cifs //192.168.n.n/Software /home/pi/energiAnalyse  -
 alias dcup='docker-compose up -d'
 alias dcdown='docker-compose down'
 alias dclogs='docker-compose logs -f'
+alias dclogmqtthook='docker logs -f $(docker ps -q --filter "name=energy-mqtthook")'
+alias dclogmqtt='docker logs -f $(docker ps -q --filter "name=mosquitto-mqtt")'
 alias dockerweb='docker exec -it $(docker ps -q --filter "name=energy-webhook") bash'
 alias dockerworker='docker exec -it $(docker ps -q --filter "name=energy-worker") sh'
 alias dockerattach='docker attach $(docker ps -q --filter "name=energy-worker")'
 alias dockermqtt='docker exec -it $(docker ps -q --filter "name=energy-mqtthook") bash'
 ````
+### **Issues**
 
+- Manage different `messages` in MQTT topic `arduino/status`;
+  - `disconnect`  "Last will message.
+  - `re-connect`  :%lu:%li:%li",currentMillis, totalCount, count. When reconnected.
+  - `powerup`     When Energy Meter Monitor power up, and timestams start over from 0 millis.
+  - `alive`       Future message. Might be a way to keep MQTT connection alive.
+- Manage e-mail notofications from MQTT topic `arduino/status` - special during maturation.
+
+  Maybe manage e-mail address from webhook, and set levels om e-mail notifications.
+- Client looses connection - try using HOST network for MQTT broker...
 
 #### **Footnotes**
 =======
