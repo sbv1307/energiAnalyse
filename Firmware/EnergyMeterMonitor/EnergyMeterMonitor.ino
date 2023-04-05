@@ -59,6 +59,8 @@
  * 
  * First take: a dubble array of unsigned long int's: timeStamps[number of channerls][number of timestamps] will hold the
  * timestamps collected.
+ * Couldn't figure out how the compiler handled multiDimensionalArray unsigned long int arrays.
+ * Second take: define a singDimensionalArray (a normal arraly) and programatically handle the " mulit..." 
  */
 
 /*
@@ -71,10 +73,13 @@
  * Sketch uses 13342 bytes (41%)
  * Global variables use 807 bytes (39%), leaving 1241.
  * 
+ * After including TBPubSubClient and adding MQTT initialisation
+ * Sketch uses 18538 bytes (57%) 
+ * Global variables use 956 bytes (46%), leaving 1092.
  */
 #include <SPI.h> 
 #include <Ethernet.h>
-
+#include <TBPubSubClient.h>
 
 /*
  * ######################################################################################################################################
@@ -83,7 +88,7 @@
 */
 #define DEBUG        // If defined (remove // at line beginning) - Sketch await serial input to start execution, and print basic progress 
                        //   status informations
-#define WEB_DEBUG    // (Require definition of  DEBUG!) If defined - print detailed informatins about web server and web client activities
+#define MQTT_DEBUG    // (Require definition of  DEBUG!) If defined - print detailed informatins about web server and web client activities
 #define COUNT_DEBUG  // (Require definition of  DEBUG!)If defined - print detailed informatins about puls counting. 
 #define ARDUINO_UNO_DEBUG  //If defined: MAC and IP address will be set accoring to the MAC address for the Arduino Ethernet shield
 /*
@@ -100,7 +105,18 @@ const int PPKW[NO_OF_CHANNELS] = {1000,1000,1000,1000,1000,100,100,100};    //Va
 #define INTERRUPT_PIN 2
 #define CHIP_SELECT_PIN 4
 #define LED_BUILTIN 17
-#define MQTT_CLIENT_PORT_NUMBER 1883
+
+#define MQTT_USERNAME "" 
+#define MQTT_PASSWORD ""
+#define WILL_TOPIC "arduino/status"
+#define WILL_QOS 0
+#define WILL_RETAIN true
+#define WILL_MESSAGE "disconnected"
+#define MQTT_PORT_NUMBER 1883
+
+#define MQTT_RE_PUBLISH_SUSPEND 2000
+#define MQTT_RE_CONNECT_SUSPEND 5000
+
 
 /*
  * Incapsulate strings i a P(string) macro definition to handle strings in PROGram MEMory (PROGMEM) to reduce valuable memory  
@@ -130,13 +146,32 @@ IPAddress mqttClientIP( 192, 168, 10, 132);          // IP address for energy-we
  */
 
 #define ERR_ETHERNET_BEGIN 1
-#define INPUT_OUTPUT_STRING_LENGHT 134
+#define MQTT_CONNECT 2
+#define TIME_STAMP_BUFFER_FULL 3
 
-EthernetClient webHookClient;
+#define POWER_UP false
+#define RE_CONNECT true
 
-unsigned long timeStamps[NO_OF_CHANNELS][NO_OF_TIMESTAMPS];
+EthernetClient ethClient;
+PubSubClient mqttClient(ethClient);
+
+unsigned long timeStamps[NO_OF_TIMESTAMPS * NO_OF_CHANNELS];
 unsigned long led_buildin_ON_at;
 boolean led_buildin_ON;
+
+unsigned long currentMillis = 0;
+unsigned long lastPublish = 0;
+unsigned long publishSuspend = 0;
+
+long count = 0;        // Track how many datasets have been published since last disconnection.
+long totalCount = 0;   // Track how many datasets have been published durin this instanse.
+
+                                                                    #ifdef COUNT_DEBUG
+                                                                      int received = 0;
+                                                                      int published = 0;
+                                                                      int balance = 0;
+                                                                    #endif
+
 
 /*
  *  #####################################################################################################################
@@ -154,16 +189,44 @@ volatile unsigned long volTimeStamp[NO_OF_CHANNELS];
 */
 
 /*
- * >>>>>>>>>>>>>>   P U B L I S H    T O     E N N R G Y - M Q T T H O O K    <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+ * >>>>   C O N N E C T   /   R E - C O N N E C T   T O     E N N R G Y - M Q T T H O O K    <<<<<<<<<
  *
 */
+boolean reconnect( boolean connectType) {         // connecType = TRUE ==> Re-connect else Power Up
+  // Create unike (random) client ID
+  String clientId = "arduino-";
+  clientId += String( random(0xffff), HEX);
+                                                              #ifdef MQTT_DEBUG
+                                                                Serial.print(P("Attepmt to connect as: "));
+                                                                Serial.print(clientId);
+                                                              #endif
+  if (mqttClient.connect( clientId.c_str(), MQTT_USERNAME, MQTT_PASSWORD, WILL_TOPIC, WILL_QOS, WILL_RETAIN, WILL_MESSAGE)) {
+    if ( connectType) {
+      char message[70];
+      sprintf(message,"re-connect:%lu:%li:%li",currentMillis, totalCount, count);
+      mqttClient.publish(WILL_TOPIC, message);
+    } else {
+      mqttClient.publish(WILL_TOPIC, "powerup");
+    }
+                                                              #ifdef MQTT_DEBUG
+                                                                Serial.println(P(". - Connected"));
+                                                              #endif
 
+  } 
+                                                              #ifdef MQTT_DEBUG
+                                                                else {
+                                                                  Serial.print(P(". - Failed! return code = "));
+                                                                  Serial.print(mqttClient.state());
+                                                                }
+                                                              #endif
+  return mqttClient.connected();
+}
 
 /*
  * >>>>>>>>>>>>>>>>>>>>>>>>>>> i n d i c a t e  E r r o r   <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
  */
 
-void indicateError( int errPoint, int returnValue) {
+void indicateError( int errPoint, int returnValue, boolean fatalError) {
 
                                                               #ifdef DEBUG
                                                                 Serial.print(P("Error at: "));
@@ -171,11 +234,16 @@ void indicateError( int errPoint, int returnValue) {
                                                                 Serial.print(P(". Return Valune: "));
                                                                 Serial.println(returnValue);
                                                               #endif
-  while (true) {
-    digitalWrite(LED_BUILTIN, HIGH);
-    delay(250);
-    digitalWrite(LED_BUILTIN, LOW);
-    delay(250);
+  if ( fatalError) {
+                                                              #ifdef DEBUG
+                                                                Serial.println(P("Fatal error... Stopping. "));
+                                                              #endif
+    while (true) {
+      digitalWrite(LED_BUILTIN, HIGH);
+      delay(250);
+      digitalWrite(LED_BUILTIN, LOW);
+      delay(250);
+    }
   }
 
 
@@ -223,6 +291,7 @@ void setup() {
                                                                 ;  // Wait for serial connectionsbefore proceeding
                                                               }
                                                               Serial.println(P("Hit [Enter] to start!"));
+
                                                               while (!Serial.available()) {
                                                                 ;  // In order to prevent unattended execution, wait for [Enter].
                                                               }
@@ -232,14 +301,15 @@ void setup() {
     channelState[ii] = HIGH;
     volTimeStamp[ii] = 0;
     for (int yy = 0; yy < NO_OF_TIMESTAMPS; yy++) {
-      timeStamps[ii][yy] = 0;
+      timeStamps[ (ii * NO_OF_TIMESTAMPS) + yy ] = 0;
     }
   }
 
 /*
  * Initiate Ethernet connection
  * Static IP is used to reduce sketch size
- */
+*/
+ 
   Ethernet.begin(mac, ArduinoIP);
                                                               #ifdef DEBUG
                                                               if (ArduinoIP == Ethernet.localIP()) {
@@ -253,12 +323,16 @@ void setup() {
                                                               }
                                                               #endif
   if (ArduinoIP != Ethernet.localIP())
-    indicateError(ERR_ETHERNET_BEGIN, 0);
+    indicateError(ERR_ETHERNET_BEGIN, 0, true);
 
 /*
- * Initialise MQTT client 
+ * Initialise MQTT client and connect to publish "powerup" 
  */
- 
+  mqttClient.setServer(mqttClientIP, MQTT_PORT_NUMBER);
+  if (!reconnect( POWER_UP)) {
+    indicateError(MQTT_CONNECT, mqttClient.state(), true);
+  }
+
 
  /*
   * Initialize and arm interrupt.
@@ -274,7 +348,7 @@ void setup() {
   digitalWrite(LED_BUILTIN, LOW);
   led_buildin_ON = false;
                                                               #ifdef DEBUG
-                                                              Serial.print(P("Setup successfull - enter loop, and wait for activity."));
+                                                              Serial.println(P("Setup successfull - enter loop, and wait for activity."));
                                                               #endif
 }
 
@@ -288,45 +362,150 @@ void setup() {
  * ###################################################################################################
  */
 void loop() {
-  
-
+  currentMillis = millis();
   /*
   * >>>>>>>>>>>>>>>>>>>>>>>>>  C o u n i n g    m o d u l e   -   B E G I N     <<<<<<<<<<<<<<<<<<<<<<<
   * >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
   * 
   */
 
- 
+
   for (int ii = 0; ii < NO_OF_CHANNELS; ii++) {
     if ( !channelState[ii] ) {
       int yy = 0;
-      while (timeStamps[ii][yy] != 0 and yy < NO_OF_TIMESTAMPS)
+      while (timeStamps[ (ii * NO_OF_TIMESTAMPS) + yy ] != 0 & yy < NO_OF_TIMESTAMPS) {
         yy++;
-      timeStamps[ii][yy] = volTimeStamp[ii];
+      }
+      if ( yy == NO_OF_TIMESTAMPS) {
+        indicateError( TIME_STAMP_BUFFER_FULL, ii, false);
+        yy--; 
+      }
+
+      timeStamps[ (ii * NO_OF_TIMESTAMPS) + yy ] = volTimeStamp[ii];
       channelState[ii] = HIGH;
 
       led_buildin_ON_at = millis();
       digitalWrite(LED_BUILTIN, HIGH);
       led_buildin_ON = true;
-                                                         #ifdef COUNT_DEBUG
-                                                              int channel = ii + 1;
-                                                              if ( channel == 1)
-                                                                Serial.println();
-                                                                Serial.print(P("Pulse registrated for channel "));
-                                                                Serial.print( channel);
-                                                                Serial.print(P(" at: "));
-                                                                Serial.println(volTimeStamp[ii]);
-                                                              #endif
+                                                                    #ifdef COUNT_DEBUG
+                                                                      Serial.print("Index: ");
+                                                                      Serial.println((ii * NO_OF_TIMESTAMPS) + yy);
+                                                                      int channel = ii + 1;
+                                                                      Serial.println();
+                                                                      Serial.print(P("Pulse registrated for channel "));
+                                                                      Serial.print( channel);
+                                                                      Serial.print(P(" at: "));
+                                                                      Serial.println(volTimeStamp[ii]);
+                                                                      received++;
+                                                                      balance++;
+                                                                    #endif
     }
   }
 
   /*
   * <<<<<<<<<<<<<<<<<<<<<<<<<  C o u n i n g    m o d u l e   -   E N D      >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
   * <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<< >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+  * 
+  * >>>>>>>>>>>>>>>>>>>  M Q T T   P U B L I S H   M O D U L E    -   B E G I N   <<<<<<<<<<<<<<<<<<<<<<<<<<
   */
 
-//  for (int ii = 0; ii < NO_OF_CHANNELS; ii++) {
-  
+  if (currentMillis - lastPublish > publishSuspend) {
+    for (int ii = 0; ii < NO_OF_CHANNELS; ii++) {
+      for (int yy = 0; yy < NO_OF_TIMESTAMPS; yy++) {
+
+        if (timeStamps[ (ii * NO_OF_TIMESTAMPS) + yy ] != 0) {
+          int channel = ii + 1;                                                            
+          String strTopic = String("channel/") + channel + String("/timestamp");
+          char charTopic[22] = "";
+          strTopic.toCharArray(charTopic, 22);
+          char charPayload[14] = "";
+          ltoa(timeStamps[ (ii * NO_OF_TIMESTAMPS) + yy ], charPayload, 10);
+                                                                      #ifdef MQTT_DEBUG
+                                                                        Serial.print(P("Publish to: "));
+                                                                        Serial.print(charTopic);
+                                                                        Serial.print(P(". Payload: "));
+                                                                        Serial.println(charPayload);
+                                                                      #endif
+          boolean rc = mqttClient.publish(charTopic, charPayload); 
+
+          if (rc) {
+            count++;
+            totalCount++;
+                                                                      #ifdef COUNT_DEBUG
+                                                                        published++;
+                                                                        balance--;
+                                                                        Serial.println();
+                                                                        Serial.print(P("Total counts: "));
+                                                                        Serial.print(totalCount);
+                                                                        Serial.print(P(". Count: "));
+                                                                        Serial.print(count);
+                                                                        Serial.print(P(". Received: "));
+                                                                        Serial.print(received);
+                                                                        Serial.print(P(". Published: "));
+                                                                        Serial.print(published);
+                                                                        Serial.print(P(". Balance: "));
+                                                                        Serial.print(balance);
+                                                                        Serial.print(P(". Channel: "));
+                                                                        Serial.print(ii + 1);
+                                                                        Serial.print(P(". Buf: "));
+                                                                        Serial.print(yy);
+                                                                        Serial.print(P(". Index: "));
+                                                                        Serial.print((ii * NO_OF_TIMESTAMPS) + yy );
+                                                                        Serial.print(P(". Time stamp: "));
+                                                                        Serial.println(timeStamps[ (ii * NO_OF_TIMESTAMPS) + yy ]);
+                                                                        
+                                                                      #endif
+
+            // Make space in timeStams array for new timestamps and update counters...
+            for (int zz = 0; zz < (NO_OF_TIMESTAMPS - 1); zz++) {
+              timeStamps[ (ii * NO_OF_TIMESTAMPS) + zz] = timeStamps[ (ii * NO_OF_TIMESTAMPS) + (zz + 1)];
+            }
+            timeStamps[ (ii * NO_OF_TIMESTAMPS) + (NO_OF_TIMESTAMPS - 1)] = 0;
+          } else {
+            int stateValue = mqttClient.state();
+                                                                      #ifdef MQTT_DEBUG
+                                                                        Serial.print(P("Publish failed. MQTT state: "));
+                                                                        Serial.println(stateValue);
+                                                                      # endif
+            if ( stateValue == 0) {
+                                                                      #ifdef MQTT_DEBUG
+                                                                        Serial.print(P(". Re-publish in "));
+                                                                        Serial.print(MQTT_RE_PUBLISH_SUSPEND / 1000);
+                                                                        Serial.println(P(" seconds."));
+                                                                      # endif
+              lastPublish = millis();
+              publishSuspend = MQTT_RE_PUBLISH_SUSPEND;
+            } else {
+              if ( !mqttClient.connected()) {
+                lastPublish = millis();
+                if (reconnect(RE_CONNECT)) {
+                  publishSuspend = 0;
+                  count = 0;
+                } else {
+                                                                      #ifdef MQTT_DEBUG
+                                                                        Serial.print(P(". Tri again in "));
+                                                                        Serial.print(MQTT_RE_CONNECT_SUSPEND / 1000);
+                                                                        Serial.println(P("seconds..."));
+                                                                      # endif
+                  publishSuspend = MQTT_RE_CONNECT_SUSPEND;
+                }
+              }
+            }
+          }
+        }
+
+
+      }
+    }
+
+  }
+
+
+
+  /* 
+  * >>>>>>>>>>>>>>>>>>>  M Q T T   P U B L I S H   M O D U L E    -   E N D   <<<<<<<<<<<<<<<<<<<<<<<<<<
+  */
+
 
   if (led_buildin_ON) {
     if (millis() > led_buildin_ON_at + (long)150) {

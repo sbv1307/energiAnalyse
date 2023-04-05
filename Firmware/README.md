@@ -1,4 +1,13 @@
-# Energi analyse
+# Energi Meter Monitor
+
+This sketch monitors an open collector output on a number of Carlo Gavazzi energy meters Type EM23 DIN and/or Type EM111.
+
+When a FALLING pulse registered on interrupt pin 2, all the defined channelPins are read. The number of milliseconds passed since the Arduino board began running the current instance, is mapped to the activated channelPins, and these datasets are published to a MQTT (Message Queuing Telemetry Transport) broker.
+
+Since tests 
+
+IP address is hardcoded to reduce memory requirement.
+
 
 ## Version history
 
