@@ -57,10 +57,16 @@
  * up til a couple of publish re-tries with a 5 seconds break, solves that problem. However since pulses might still arrive
  * in the period required to re-establish MQTT connection, a buffer is required to logged timestamps.
  * 
- * First take: a dubble array of unsigned long int's: timeStamps[number of channerls][number of timestamps] will hold the
+ * First take: a multiDimensionalArray array of unsigned long int's: timeStamps[number of channerls][number of timestamps] will hold the
  * timestamps collected.
  * Couldn't figure out how the compiler handled multiDimensionalArray unsigned long int arrays.
- * Second take: define a singDimensionalArray (a normal arraly) and programatically handle the " mulit..." 
+ * 
+ * Second take: define a singDimensionalArray (a normal array) and programatically handle the " mulit..." 
+ * SO: 
+ * -  nstead of:  unsigned long timeStamps[number of channerls][number of timestamps];
+ *    Used:       unsigned long timeStamps[NO_OF_TIMESTAMPS * NO_OF_CHANNELS]; 
+ * -  INstead of: timeStamps[channel number][timestamp number] = millis();
+ *    Used:       timeStamps[ (<channel number> * NO_OF_TIMESTAMPS) + <timestamp number> ] = 0;
  */
 
 /*
@@ -76,6 +82,14 @@
  * After including TBPubSubClient and adding MQTT initialisation
  * Sketch uses 18538 bytes (57%) 
  * Global variables use 956 bytes (46%), leaving 1092.
+ * 
+ * After including MQTT logic for managing publications, error handlings (discoooects and re-publishing) and debugging messages.
+ * Sketch uses 21018 bytes (65%)
+ * Global variables use 998 bytes (48%), leaving 1050.
+ * 
+ * After disabling debugmessages
+ * Sketch uses 19146 bytes (59%)
+ * Global variables use 984 bytes (48%), leaving 1064
  */
 #include <SPI.h> 
 #include <Ethernet.h>
@@ -86,11 +100,11 @@
  *                                    D E F I N E    D E G U G G I N G
  * ######################################################################################################################################
 */
-#define DEBUG        // If defined (remove // at line beginning) - Sketch await serial input to start execution, and print basic progress 
+//#define DEBUG        // If defined (remove // at line beginning) - Sketch await serial input to start execution, and print basic progress 
                        //   status informations
-#define MQTT_DEBUG    // (Require definition of  DEBUG!) If defined - print detailed informatins about web server and web client activities
-#define COUNT_DEBUG  // (Require definition of  DEBUG!)If defined - print detailed informatins about puls counting. 
-#define ARDUINO_UNO_DEBUG  //If defined: MAC and IP address will be set accoring to the MAC address for the Arduino Ethernet shield
+//#define MQTT_DEBUG    // (Require definition of  DEBUG!) If defined - print detailed informatins about web server and web client activities
+//#define COUNT_DEBUG  // (Require definition of  DEBUG!)If defined - print detailed informatins about puls counting. 
+//#define ARDUINO_UNO_DEBUG  //If defined: MAC and IP address will be set accoring to the MAC address for the Arduino Ethernet shield
 /*
  * ######################################################################################################################################
  *                       C  O  N  F  I  G  U  T  A  B  L  E       D  E  F  I  N  I  T  I  O  N  S
