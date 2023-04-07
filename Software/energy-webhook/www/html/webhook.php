@@ -29,7 +29,7 @@ if (isset( $_GET["debug"] ) ) {
                         echo "Enable debugging.<br>";
                         break;
                 case "false":
-                        $redis->del("debug");
+                        $redis->set("debug", "false");
                         $redis->del("foo");
                         echo "Disable debugging.<br><br><br>";
                         break;
@@ -45,7 +45,7 @@ if (isset( $_POST["debug"] )) {
                         echo "Enable debugging.<br>";
                         break;
                 case "false":
-                        $redis->del("debug");
+                        $redis->set("debug", "false");
                         $redis->del("foo");
                         echo "Disable debugging.<br><br><br>";
                         break;
@@ -53,7 +53,7 @@ if (isset( $_POST["debug"] )) {
         }
 }
 
-if ($redis->get("debug")) {
+if ($redis->get("debug") == "true") {
         echo "Debugging Enabled!<br><br><br>";
         $debug = TRUE;
 } else {

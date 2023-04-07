@@ -82,22 +82,20 @@ $redis = new Redis(['host' => 'redis-db']);
 </form>
 </p>
 <?php
-if ($redis->get("debug")) {
+if ($redis->get("debug") == "true") {
 ?>
 <form method='post' action='./webhook.php' target='dummyframe'>
+    <lable>Debugging ENABLED!!!&emsp;&emsp;</label>
     <input type='hidden' name='debug' value='false'>
-    <input type='submit' value='DISABLE debug'>
-    <lable>Disable debugging.&emsp;&emsp;</label>
+    <input type='submit' value='DISABLE debugging'>
 </form>
-
-
 <?php
 } else  {
 ?>
 <form method='post' action='./webhook.php' target='dummyframe'>
+    <lable>Debugging DISABLED!!!&emsp;&emsp;</label>
     <input type='hidden' name='debug' value='true'>
-    <input type='submit' value='ENABLE debug'>
-    <lable>Enable debugging.&emsp;&emsp;</label>
+    <input type='submit' value='ENABLE debugging'>
 </form>
 
 

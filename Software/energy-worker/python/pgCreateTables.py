@@ -75,7 +75,10 @@ def pgCreateTables():
         """)
     
     drop_commands = (
-        """ DROP TABLE IF EXISTS consumption""", """ DROP TABLE IF EXISTS meter_status""","""DROP TABLE IF EXISTS meter_metadata"""
+        """ DROP TABLE IF EXISTS meter_status """,
+        """ DROP TABLE IF EXISTS consumption """, 
+        """ DROP TABLE IF EXISTS meter_totals """,
+        """ DROP TABLE IF EXISTS meter_metadata """
     )
     
     conn = None
@@ -123,13 +126,14 @@ def pgCreateTables():
 
         insert_stmt = "INSERT INTO meter_metadata (meter_no,\
         meter_name, pulse_per_kWh, max_energy, power_factor, deviation_pct) VALUES (%s, %s, %s, %s, %s, %s)"
-        data = [(1, 'Varmepumpe SMO 40', 100, 11000, 1.0, 10),
-                (2, 'Kraftstik Værksted Garage', 100, 11000, 1.0, 10),
-                (3, 'Kontor EDB', 1000, 2500, 1.0, 10),
+        data = [(1, 'Kontor 1. sal', 1000, 2500, 1.0, 10),
+                (2, 'Værksted Lager Loft', 1000, 2500, 1.0, 10),
+                (3, 'Garage', 1000, 2500, 1.0, 10),
                 (4, 'Bryggers Teknik', 1000, 2500, 1.0, 10),
-                (5, 'Garage', 1000, 2500, 1.0, 10),
-                (6, 'Værksted Lager Loft', 1000, 2500, 1.0, 10),
-                (7, 'Kontor 1. sal', 1000, 2500, 1.0, 10),
+                (5, 'Kontor EDB', 1000, 2500, 1.0, 10),
+                (6, 'Kraftstik Værksted Garage', 100, 11000, 1.0, 10),
+                (7, 'Varmepumpe SMO 40', 100, 11000, 1.0, 10),
+                (8, 'Ovn', 100, 11000, 1.0, 10)
                 ]   
         cur.executemany(insert_stmt, data)
 

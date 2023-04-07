@@ -58,6 +58,37 @@ RUN apk update
 RUN apk add postgresql-dev gcc python3-dev musl-dev
 
 ```
+## Energy MQTThook module
+
+### **mqtt_subscibe.php**
+
+### Required environment variables
+
+````bash
+MQTT_SERVER='mosquitto-mqtt'        # MQTT Broke's hostname or IP Address.
+                                    # Here the `mosquitto-mqtt` docker container name is used.
+MQTT_PORT=1883                      # MQTT Broker's port number. TCP/IP port 1883 is reserved with IANA for use with MQTT. 
+                                    # TCP/IP port 8883 is also registered, for using MQTT over SSL.
+MQTT_CLIENT_ID='webhook-subscriber' # Name used to identify the MQTT client.
+````
+
+### Optional environment variable
+
+These environemt varables controles notification e-mails. E-mails, which can be send when one of the following events occours.
+
+- `powerup` &emsp;&emsp;&ensp;&nbsp;  This event occours when the Arduino borad, which runs the Energy Meter Monitor, starts monitoring the energy meters.
+- `disconnected` &nbsp; This occours when the client is disconnected. Either due to timeout or failure publishing messages to the MQTT broker.
+- `re-connect:currentMillis:totalCount:count)` 
+
+````bash
+NOTIFICATION_E_MAIL=*E-mail addres* # E-mail address to which notifications will be send
+# If the one or more of the following environment variables is NOT set, e-mail notificatinos will NOT be send.
+MQTT_POWERUP_NOTIFICATION='YES'     # IF set: Energy Meter Powerup notifications will be send. 
+MQTT_DISCONNECT_NOTIFICATION='YES'  # IF set: Disconnect notifications will be send
+MQTT_RECONNECT_NOTIFICATION='YES'   # IF set: Re-connect  notifications will be send
+MQTT_ALIVE_NOTIFICATION='YES'
+````
+
 
 ## Software Version History
 

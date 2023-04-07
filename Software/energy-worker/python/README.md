@@ -8,16 +8,17 @@ The main program (energy-worker.py), will be the program, which initialize the e
 
 The loop will read Key - Value from the redis database and will handle the following Key - Value sets.
 
-Keys for timestame and metercount is expected to be: 'channel:[n]:timestamp' or 'channel:[n]:metercount'. Where [n] represent the meter number 1-7.
+Keys for timestame and metercount is expected to be: 'channel:[n]:timestamp' or 'channel:[n]:metercount'. Where [n] represent the meter number 1-7.S
 
 | Keys which include: | Value | Esplanation |
-|----|----|----|
-| timestamp | 0 - 2^32 | The time in milli secunds received from the Arduino board. |
-| metercount | 1 - 9999999 | Setting the Energy meter value. NOTE then value does NOT contain a decimal seberator like ',' or '.'. The two last didgits will be decimals. This is to make data enrty faster and easier. |
-| powerup | true | This will start the powerUP_Handler.py module. Because the time on the Arduino server will start over (from 0), when it powers up. Then data handled by the pulseTimeStampHandler.py module will need to be able to handle the comming timestamp - millis key - value sets correctly. The powerUP_Handler.py module does just that. |
-| stop | true | When this Key - Value combination is found, the infinite loop will exit, and the container will exit as well. |
-| foo | bar | A Key - Valye set, which is used by the debug funktion in the energy-webhook service. No actions taken |
-| Every thing else | Any value | Illegal Key - Value combination. Will be deleted |
+|----              |----          |----|
+| timestamp        | 0 - 2^32     | The time in milli secunds received from the Arduino board. |
+| metercount       | 1 - 9999999  | Setting the Energy meter value. NOTE then value does NOT contain a decimal seberator like ',' or '.'. The two last didgits will be decimals. This is to make data enrty faster and easier. |
+| powerup          | true         | This will start the powerUP_Handler.py module. Because the time on the Arduino server will start over (from 0), when it powers up. Then data handled by the pulseTimeStampHandler.py module will need to be able to handle the comming timestamp - millis key - value sets correctly. The powerUP_Handler.py module does just that. |
+| stop             | true         | When this Key - Value combination is found, the infinite loop will exit, and the container will exit as well. |
+| foo              | bar          | A Key - Valye set, which is used by the debug funktion in the energy-webhook service. No actions taken |
+| debug            | true / False | `true` enables debug == printing status messages. `False` dieable debugging.
+| Every thing else | Any value    | Illegal Key - Value combination. Will be deleted |
 
 ## The program stack
 

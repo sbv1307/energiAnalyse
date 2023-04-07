@@ -81,6 +81,13 @@ services:
       - MAIL_SMTP_HOST=${MAIL_SMTP_HOST}
       - MAIL_SMTP_USERNAME=${MAIL_SMTP_USERNAME}
       - MAIL_SMTP_PASSWORD=${MAIL_SMTP_PASSWORD}
+      - MQTT_SERVER=${MQTT_SERVER}
+      - MQTT_PORT=${MQTT_PORT}
+      - MQTT_CLIENT_ID=${MQTT_CLIENT_ID}
+      - NOTIFICATION_E_MAIL=${NOTIFICATION_E_MAIL}
+      - MQTT_POWERUP_NOTIFICATION=${MQTT_POWERUP_NOTIFICATION}
+      - MQTT_DISCONNECT_NOTIFICATION=${MQTT_DISCONNECT_NOTIFICATION}
+      - MQTT_RECONNECT_NOTIFICATION=${MQTT_RECONNECT_NOTIFICATION}
     links:
       - redis-db
     depends_on:
@@ -89,7 +96,7 @@ services:
       - mosquitto-mqtt
     networks:
       - front-end
-    
+
   energy-worker:
     container_name: energy-worker
     image: sbv1307/energy-worker 
@@ -99,8 +106,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=postgres-db   # DO NOT CHANGE!. Need to med the same as the service name for the postgres image
-      - GOOGLE_WEBHOOK_URL= http://192.168.10.102/energyRegistrations/updateEnergyRegistrations
-      - GOOGLE_WEBHOOK=test
+      - GOOGLE_WEBHOOK_URL=${GOOGLE_WEBHOOK_URL}
     links:
       - redis-db
       - postgres-db

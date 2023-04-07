@@ -3,7 +3,6 @@ energy-worker.py
 
 '''
 import os
-import sys
 import psycopg2
 import redis
 import time
@@ -16,11 +15,6 @@ from powerUP_Handler import powerUP_Handler
 from pgUpdateMeterCount import pgUpdateMeterCount
 from pushToGoogle import pushToGoogle
 from pgInsertTotals import pgInsertTotals
-
-def processing_flush(tekst, n, index=5):
-    sys.stdout.write("\rProcessing %s %s%s" % (tekst, (n % index)* ".", (index - 1 - (n % index))* " "))
-    sys.stdout.write("\rProcessing %s %s" % (tekst, (n % index)* "."))
-    sys.stdout.flush()
 
 def knownKeyHandler( key, value):
     s_key = key.decode("utf-8")
@@ -35,7 +29,7 @@ def illigalKeyHandler( key, valye):
 ####################################################################################################
 ############################  M A I N #############################################################
 
-# Print startup infor til boot log
+# Print startup info til boot log
 print('Starting energy-worker version 2.0.0 - Initial version after version controle')
 
 # Creat postgres.ini file from environmentvariables if it does not exist
@@ -75,23 +69,17 @@ if pgConnect() is not True:
         if pgCreateTables() is not True:
             print('energy-worker - Creating tables in PostgreSQL database failed ==> ABORTING')
             continue_loop = False
-            
+
+print ('energy-worker - connected to PostfreSQL. Enter infinite loop..')            
 n=0
+debug = False
 while continue_loop:
     # Get list of available keys in Redis DB
     keylist = r.keys("*")
 
-    # If debugging - Updating processbar.
-    tekst = f'Available keys: {keylist}'
-    n += 1
-    processing_flush(tekst, n, index=50)
-    if (n > 100):
-        n = 0
-    
     # If there are available keys? Handle each key!
     if len(keylist) > 0:
         for key in keylist:
-
             # Decode key / value set as strings, as they are stored at bytes in redis
             value = r.get(key).decode("utf-8")
             s_key = key.decode("utf-8")
@@ -100,24 +88,28 @@ while continue_loop:
             if "timestamp" in s_key:
                 try:
                     millis = int(value)
-#                    print(f'Timestamp for {key} = {millis} ')
+                    if debug:
+                        print(f'Timestamp for {key} = {millis} ')
                     pulseTimeStampHandler( s_key, value)
                 except ValueError:
                     print(f'Value: {value} invalid for key {key}. Deleting key!')
 
                 x = r.delete(key)
-#                print(f'Key {key} deleted {x}')
+                if debug:
+                    print(f'Key {key} deleted {x}')
 
             elif "metercount" in s_key:
                 try:
                     metercount = int(value)
-#                    print(f'Meter count for {key} = {metercount} ')
+                    if debug:
+                        print(f'Meter count for {key} = {metercount} ')
                     pgUpdateMeterCount( s_key, value)
                 except ValueError:
                     print(f'Value: {value} invalid for key {key}. Deleting key!')
 
                 x = r.delete(key)
-#                print(f'Key {key} deleted {x}')
+                if debug:
+                    print(f'Key {key} deleted {x}')
 
             elif "pushtogoogle" in s_key and "true" in value:
                 pushToGoogle()
@@ -128,8 +120,16 @@ while continue_loop:
                 powerUP_Handler()
                 x = r.delete(key)
 
-            elif "foo" in s_key or "debug" in s_key:
+            elif "foo" in s_key:
                 knownKeyHandler( key, value)
+
+            elif "debug" in s_key:
+                if "true" in value:
+                    debug = True
+                else:
+                    debug = False
+                    x = r.delete(key)
+                    print(f'Key {key} deleted {x}')
 
             elif "stop" in s_key and "true" in value:
                 x = r.delete(key)

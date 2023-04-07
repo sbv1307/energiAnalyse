@@ -109,6 +109,13 @@ services:
       - MAIL_SMTP_HOST=${MAIL_SMTP_HOST}
       - MAIL_SMTP_USERNAME=${MAIL_SMTP_USERNAME}
       - MAIL_SMTP_PASSWORD=${MAIL_SMTP_PASSWORD}
+      - MQTT_SERVER=${MQTT_SERVER}
+      - MQTT_PORT=${MQTT_PORT}
+      - MQTT_CLIENT_ID=${MQTT_CLIENT_ID}
+      - NOTIFICATION_E_MAIL=${NOTIFICATION_E_MAIL}
+      - MQTT_POWERUP_NOTIFICATION=${MQTT_POWERUP_NOTIFICATION}
+      - MQTT_DISCONNECT_NOTIFICATION=${MQTT_DISCONNECT_NOTIFICATION}
+      - MQTT_RECONNECT_NOTIFICATION=${MQTT_RECONNECT_NOTIFICATION}
     links:
       - redis-db
     depends_on:
@@ -117,7 +124,7 @@ services:
       - mosquitto-mqtt
     networks:
       - front-end
-    
+
   energy-worker:
     container_name: energy-worker
     image: sbv1307/energy-worker 
@@ -127,8 +134,7 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=postgres-db   # DO NOT CHANGE!. Need to med the same as the service name for the postgres image
-      - GOOGLE_WEBHOOK_URL= http://192.168.10.102/energyRegistrations/updateEnergyRegistrations
-      - GOOGLE_WEBHOOK=test
+      - GOOGLE_WEBHOOK_URL=${GOOGLE_WEBHOOK_URL}
     links:
       - redis-db
       - postgres-db
@@ -176,7 +182,6 @@ volumes:
     name: mosquitto-data
   mosquitto-log:
     name: mosquitto-log
-
 ```
 
 Before starting the docker container, create a .env file in the same directory as the docker-compose.yaml file.
@@ -198,8 +203,19 @@ MAIL_SMTP_HOST=*SMTP hostname*      # For google SMTP: smtp.gmail.com
 MAIL_SMTP_USERNAME=*SMTP username*  # Typically an e-mail address
 MAIL_SMTP_PASSWORD=*SMTP Password*  #
 
+MQTT_SERVER='mosquitto-mqtt'        # MQTT Broke's hostname or IP Address (here the `mosquitto-mqtt` docker container name is used.)
+MQTT_PORT=1883                      # MQTT Broker's port number. TCP/IP port 1883 is reserved with IANA for use with MQTT. 
+                                    # TCP/IP port 8883 is also registered, for using MQTT over SSL.
+MQTT_CLIENT_ID='webhook-subscriber' # Name used to identify the MQTT client.
+NOTIFICATION_E_MAIL=*E-mail addres* # E-mail address to which notifications will be send
+# If the one or more of the following environment variables is NOT set, e-mail notificatinos will NOT be send.
+MQTT_POWERUP_NOTIFICATION='YES'     # IF set: Energy Meter Powerup notifications will be send. 
+MQTT_DISCONNECT_NOTIFICATION='YES'  # IF set: Disconnect notifications will be send
+MQTT_RECONNECT_NOTIFICATION='YES'   # IF set: Re-connect  notifications will be send
+MQTT_ALIVE_NOTIFICATION=`YES`
 
- ````
+GOOGLE_WEBHOOK_URL=*URL for the webhook used by pushToGoogle.py to forward updates to Google sheets*
+````
 
 Verify that the environment variables is succesfull read by docker compose.
 
@@ -227,15 +243,16 @@ docker-compose up -d
     .
     volumes:      #v Verify that this is located under the energy-worker service !
       - ./energy-worker/python:/usr/src/app
+    command: sleep 10000  #This will prevent energy-worker.py from starting and keep the container alive for investigation.
+
 
   energy-mqtthook:
     .
     .
     volumes:    # Verify that his i located under the energy-mqtthook service !!!!!
       - ./energy-mqtthook/usr/src/mqtt:/usr/src/mqtt
-
-  
-```
+    command: sleep 10000  #This will prevent energy-worker.py from starting and keep the container alive for investigation.
+ ```
 
 #### **Usefull aliases**
 
@@ -253,15 +270,8 @@ alias dockermqtt='docker exec -it $(docker ps -q --filter "name=energy-mqtthook"
 ````
 ### **Issues**
 
-- Manage different `messages` in MQTT topic `arduino/status`;
-  - `disconnect`  "Last will message.
-  - `re-connect`  :%lu:%li:%li",currentMillis, totalCount, count. When reconnected.
-  - `powerup`     When Energy Meter Monitor power up, and timestams start over from 0 millis.
-  - `alive`       Future message. Might be a way to keep MQTT connection alive.
-- Manage e-mail notofications from MQTT topic `arduino/status` - special during maturation.
-
-  Maybe manage e-mail address from webhook, and set levels om e-mail notifications.
-- Client looses connection - try using HOST network for MQTT broker...
+- redis-db           | 1:M 07 Apr 2023 12:32:55.969 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+r
 
 #### **Footnotes**
 =======

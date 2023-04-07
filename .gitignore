@@ -1,3 +1,4 @@
 .vscode/*
 *secret*
 .env
+*pycache*
