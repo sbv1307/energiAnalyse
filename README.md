@@ -270,8 +270,16 @@ alias dockermqtt='docker exec -it $(docker ps -q --filter "name=energy-mqtthook"
 ````
 ### **Issues**
 
+- Runnning code on Arduino Ethernet: 1680884581: Client <unknown> disconnected due to protocol error.
+- Create unike (random) client ID using random ==> random is not really random... 
+````bash
+  // if analog input pin 0 is unconnected, random analog
+  // noise will cause the call to randomSeed() to generate
+  // different seed numbers each time the sketch runs.
+  // randomSeed() will then shuffle the random function.
+  randomSeed(analogRead(0));
+````
 - redis-db           | 1:M 07 Apr 2023 12:32:55.969 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
-r
 
 #### **Footnotes**
 =======
