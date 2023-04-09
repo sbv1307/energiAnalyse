@@ -281,6 +281,26 @@ alias dockermqtt='docker exec -it $(docker ps -q --filter "name=energy-mqtthook"
 ````
 - redis-db           | 1:M 07 Apr 2023 12:32:55.969 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
 
+ - Error message from energy worker...
+ ````bash
+energy-worker      | Starting energy-worker version 2.0.0 - Initial version after version controle
+energy-worker      | Connection to redis: Redis<ConnectionPool<Connection<host=redis-db,port=6379,db=0>>>
+energy-worker      | energy-worker - connected to PostfreSQL. Enter infinite loop..
+energy-worker      | Traceback (most recent call last):
+energy-worker      |   File "/usr/src/app/energy-worker.py", line 84, in <module>
+energy-worker      |     value = r.get(key).decode("utf-8")
+energy-worker      |             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+energy-worker      | UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc4 in position 0: invalid continuation byte
+energy-worker      | Starting energy-worker version 2.0.0 - Initial version after version controle
+energy-worker      | Connection to redis: Redis<ConnectionPool<Connection<host=redis-db,port=6379,db=0>>>
+energy-worker      | energy-worker - connected to PostfreSQL. Enter infinite loop..
+energy-worker      | Traceback (most recent call last):
+energy-worker      |   File "/usr/src/app/energy-worker.py", line 84, in <module>
+energy-worker      |     value = r.get(key).decode("utf-8")
+energy-worker      |             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+energy-worker      | UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc4 in position 0: invalid continuation byte
+e
+ ````
 #### **Footnotes**
 =======
 ###### 1. <span id="f1"></span> See document: [Setting up and configure Raspberry Pi 3 MODEL B+ for the energy analasys project](./docs/SettingUpRaspberryPi.md). [$\hookleftarrow$](#a1)

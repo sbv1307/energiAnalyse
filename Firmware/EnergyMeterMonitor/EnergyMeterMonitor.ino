@@ -3,10 +3,10 @@
  * 
  * This sketch monitors an open collector output on a number of Carlo Gavazzi energy meters Type EM23 DIN and/or Type EM111.
  * When a FALLING pulse registered on interrupt pin 2, all the defined channelPins are read. 
- * The number of milliseconds passed since the Arduino board began running the current instance, 
- * is mapped to the activated channelPins, and these datasets are published to a MQTT (Message Queuing Telemetry Transport) broker.
+ * The number of milliseconds passed since the Arduino board began running the current instance,  is mapped
+ * to the activated channelPins, and these datasets are published to a MQTT (Message Queuing Telemetry Transport) broker.
  * 
- * IP address is hardcoded to reduce memory requirement.
+ * As DHCP client creases the sketch size significantly, the IP address is hardcoded to reduce memory requirement.
  * 
  * In "ARDUINO_UNO_DEBUG" mode the private network is 192.168.10.0 and the Arduino IP Address is: 192.168.10.123.
  * In none "ARDUINO_UNO_DEBUG" (for the sketch to run one the Arduino Ethernet REV3 board), the privat network is
@@ -21,7 +21,7 @@
  * 2023-04-02
  */
 
-#define SKETCH_VERSION "Energy Meter Monitor for Carlo Gavazzi energy meter Type EM23 and/or Type EM111 DIN - V3.0.0"
+#define SKETCH_VERSION "Energy Meter Monitor for Carlo Gavazzi energy meter Type EM23 and/or Type EM111 DIN - V3.0.1"
 
 /*
  * 
@@ -35,7 +35,7 @@
  * Pin  6: Channel pin 3: Input for reading Open Collector output on Type EM111 DIN energy meter (1000 pulses per kWh)
  * Pin  7: Channel pin 4: Input for reading Open Collector output on Type EM111 DIN energy meter (1000 pulses per kWh)
  * Pin  8: Channel pin 5: Input for reading Open Collector output on Type EM111 DIN energy meter (1000 pulses per kWh)
- * Pin  9: Default defined as LED_BUILTIN. NOT WORKING because LED_BUILTIN is defined as PIN 13. Now re-defined as PIN 17 
+ * Pin  9: Default LED_BUILTIN. However LED_BUILTIN is re-defined as PIN 13. For this sketch LED_BUILTIN is defined as PIN 17 
  * Pin 10: Chip select (CS) for SD card.
  * Pin 11: SPI.h library for MOSI (Master In Slave Out) 
  * Pin 12: SPI.h library for MISO (Master Out Slave In)
@@ -44,10 +44,12 @@
  * Pin 15 (A1): Channel pin 7: Input for reading Open Collector output on Type EM23 DIN energy meter (100 pulses per kWh)
  * Pin 16 (A2): Channel pin 8: Input for reading Open Collector output on Type EM23 DIN energy meter (100 pulses per kWh)
  * Pin 17 (A3): Defined as LED_PIN used for indicating pulsecounts and other activity (powerUP or failure to bootup) 
- *              (Replaces defective  definition of LED_BUILTIN)
- * Pin 18 (A4):
+ *              (Replaces defective definition of LED_BUILTIN)
+ * Pin 18 (A4): Used by randomSeed() to generate different seed numbers each time the sketch runs.
  * Pin 19 (A5):
  */
+
+
 
 /* 
  * The interruptfunction has a catch: It enters a "while pin 2 is low" loop, and stays there, until the interrupt is released. 
@@ -111,10 +113,13 @@
  * ######################################################################################################################################
 */
 
-#define NO_OF_CHANNELS 8                                                   // Number of energy meters connected
-#define NO_OF_TIMESTAMPS 5                                                 // Define how many timestamps
-const int channelPin[NO_OF_CHANNELS] = {3,5,6,7,8,14,15,16};               // define which pin numbers are used for input channels
-const int PPKW[NO_OF_CHANNELS] = {1000,1000,1000,1000,1000,100,100,100};    //Variable for holding Puls Pr Kilo Watt (PPKW) for each channel (energy meter)
+#define NO_OF_CHANNELS 8                                                  // Number of energy meters connected
+#define NO_OF_TIMESTAMPS 5                                                // Define how many timestamps caan be stored for the same channel
+
+const int channelPin[NO_OF_CHANNELS] = {3,5,6,7,8,14,15,16};              // define which pin numbers are used for input channels
+const int randomSeedPin = 18;                                             //Used by randomSeed() to generate different seed numbers each time the sketch runs.
+
+const int PPKW[NO_OF_CHANNELS] = {1000,1000,1000,1000,1000,100,100,100};  //Variable for holding Puls Pr Kilo Watt (PPKW) for each channel (energy meter)
 
 #define INTERRUPT_PIN 2
 #define CHIP_SELECT_PIN 4
@@ -163,8 +168,11 @@ IPAddress mqttClientIP( 192, 168, 10, 132);          // IP address for energy-we
 #define MQTT_CONNECT 2
 #define TIME_STAMP_BUFFER_FULL 3
 
-#define POWER_UP false
 #define RE_CONNECT true
+#define POWER_UP false
+
+#define FATAL_ERROR true
+#define WARNING false
 
 EthernetClient ethClient;
 PubSubClient mqttClient(ethClient);
@@ -296,10 +304,11 @@ void readChannelPins() {
  * ###################################################################################################
  */
 void setup() {
-  Serial.begin(115200);
-  Serial.println(P(SKETCH_VERSION));
+  Serial.begin(9600);
+  delay(1000);  //give hardware time to establish serial connection before printing Sketch version.
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
+  Serial.println(P(SKETCH_VERSION));
                                                               #ifdef DEBUG
                                                               while (!Serial) {
                                                                 ;  // Wait for serial connectionsbefore proceeding
@@ -320,6 +329,12 @@ void setup() {
   }
 
 /*
+ * if analog input pin 0 is unconnected, random analog noise will cause the call to randomSeed() to generate
+ * different seed numbers each time the sketch runs. randomSeed() will then shuffle the random function.
+ */
+  randomSeed(analogRead(randomSeedPin));
+
+/*
  * Initiate Ethernet connection
  * Static IP is used to reduce sketch size
 */
@@ -336,15 +351,18 @@ void setup() {
                                                                 Serial.println(Ethernet.localIP());
                                                               }
                                                               #endif
+  delay(2000);  // Giv hardware time for establish proper network connection.
+  
   if (ArduinoIP != Ethernet.localIP())
-    indicateError(ERR_ETHERNET_BEGIN, 0, true);
+    indicateError(ERR_ETHERNET_BEGIN, 0, FATAL_ERROR);
+
 
 /*
  * Initialise MQTT client and connect to publish "powerup" 
  */
   mqttClient.setServer(mqttClientIP, MQTT_PORT_NUMBER);
   if (!reconnect( POWER_UP)) {
-    indicateError(MQTT_CONNECT, mqttClient.state(), true);
+    indicateError(MQTT_CONNECT, mqttClient.state(), FATAL_ERROR);
   }
 
 
@@ -391,7 +409,8 @@ void loop() {
         yy++;
       }
       if ( yy == NO_OF_TIMESTAMPS) {
-        indicateError( TIME_STAMP_BUFFER_FULL, ii, false);
+        mqttClient.publish(WILL_TOPIC, "buffer_overrun");
+        indicateError( TIME_STAMP_BUFFER_FULL, ii, WARNING);
         yy--; 
       }
 
