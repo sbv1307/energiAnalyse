@@ -59,8 +59,9 @@ function notifyStatus( $topic, $message) {
 
     if (($GLOBALS['powerUpNotifi'] and strpos( $message, 'powerup') !== false) or 
         ($GLOBALS['disconnectNotifi'] and strpos( $message, 'disconnected') !== false) or
-        ($GLOBALS['reconnectNotifi'] and strpos( $message, 're-connect') !== false)
-        ($GLOBALS['aliveNotifi'] and strpos( $message, 'alive') !== false) ) {
+        ($GLOBALS['reconnectNotifi'] and strpos( $message, 're-connect') !== false) or
+        ($GLOBALS['aliveNotifi'] and strpos( $message, 'alive') !== false) or
+        strpos( $message, 'buffer_overrun') !== false) {
             $to =  $GLOBALS['notifyEmail'];
             if (strpos( $to, '@') !== false) {
                 if ($debug) 
