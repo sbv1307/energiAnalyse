@@ -268,10 +268,17 @@ alias dockerworker='docker exec -it $(docker ps -q --filter "name=energy-worker"
 alias dockerattach='docker attach $(docker ps -q --filter "name=energy-worker")'
 alias dockermqtt='docker exec -it $(docker ps -q --filter "name=energy-mqtthook") bash'
 ````
+
 ### **Issues**
 
+- MQTThook will not handle WILL Topic `(arduino/status)` with payload `buffer_overrun`.
+
 - **(Solved)** Runnning code on Arduino Ethernet: 1680884581: Client <unknown> disconnected due to protocol error.
+  
+  Delayes added to give hardware time to connect.
+
 - **(Solved)** Create unike (random) client ID using random ==> random is not really random... 
+
 ````bash
   // if analog input pin 0 is unconnected, random analog
   // noise will cause the call to randomSeed() to generate
@@ -279,9 +286,14 @@ alias dockermqtt='docker exec -it $(docker ps -q --filter "name=energy-mqtthook"
   // randomSeed() will then shuffle the random function.
   randomSeed(analogRead(0));
 ````
-- **(ToBe sovled, if it becomes a reald problem)** redis-db           | 1:M 07 Apr 2023 12:32:55.969 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
 
- - **Software issue** Error message from energy worker...
+- **(ToBe sovled, if it becomes a reald problem)** 
+````bash
+redis-db           | 1:M 07 Apr 2023 12:32:55.969 # WARNING Memory overcommit must be enabled! Without it, a background save or replication may fail under low memory condition. Being disabled, it can can also cause failures without low memory condition, see https://github.com/jemalloc/jemalloc/issues/1328. To fix this issue add 'vm.overcommit_memory = 1' to /etc/sysctl.conf and then reboot or run the command 'sysctl vm.overcommit_memory=1' for this to take effect.
+````
+
+ - **SOLVED** Error message from energy worker - If key or value from Redis cannot be decoded ==> energy-worker fails... try -> except added and deleation of unwanted key-value pair.
+
  ````bash
 energy-worker      | Starting energy-worker version 2.0.0 - Initial version after version controle
 energy-worker      | Connection to redis: Redis<ConnectionPool<Connection<host=redis-db,port=6379,db=0>>>
@@ -301,6 +313,7 @@ energy-worker      |             ^^^^^^^^^^^^^^^^^^^^^^^^^^
 energy-worker      | UnicodeDecodeError: 'utf-8' codec can't decode byte 0xc4 in position 0: invalid continuation byte
 e
  ````
+
 #### **Footnotes**
 =======
 ###### 1. <span id="f1"></span> See document: [Setting up and configure Raspberry Pi 3 MODEL B+ for the energy analasys project](./docs/SettingUpRaspberryPi.md). [$\hookleftarrow$](#a1)

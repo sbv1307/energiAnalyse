@@ -81,8 +81,13 @@ while continue_loop:
     if len(keylist) > 0:
         for key in keylist:
             # Decode key / value set as strings, as they are stored at bytes in redis
-            value = r.get(key).decode("utf-8")
-            s_key = key.decode("utf-8")
+            # Skip and get key deleted if decode fails.
+            try:
+                value = r.get(key).decode("utf-8")
+                s_key = key.decode("utf-8")
+            except:
+                value = ""
+                s_key = "un-decodable"
 
 
             if "timestamp" in s_key:
