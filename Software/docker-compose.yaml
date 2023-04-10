@@ -107,6 +107,7 @@ services:
       - POSTGRES_DB=${POSTGRES_DB}
       - POSTGRES_HOST=postgres-db   # DO NOT CHANGE!. Need to med the same as the service name for the postgres image
       - GOOGLE_WEBHOOK_URL=${GOOGLE_WEBHOOK_URL}
+      - PYTHONUNBUFFERED=1
     links:
       - redis-db
       - postgres-db
