@@ -4,7 +4,7 @@ import datetime
 from pgConfig import pgConfig
 
 def pgGetMeterTotals(date, time):
-    # Query Meter status from table meter_status 
+    # Query Meter status from table meter_totals 
     conn = None
 
     try:
@@ -19,8 +19,8 @@ def pgGetMeterTotals(date, time):
         # create a cursor
         cur = conn.cursor()
 
-        # Get  meter counts from meter_status
-        action = "pgGetLastMeterTotals - Select kWh FROM meter_status ... "
+        # Get  meter counts from meter_totals
+        action = "pgGetLastMeterTotals - Select kWh FROM meter_totals ... "
         selectStmt = "SELECT meter_no_1, meter_no_2, meter_no_3, \
                         meter_no_4, meter_no_5, meter_no_6, meter_no_7 \
                         FROM meter_totals \
@@ -49,11 +49,11 @@ if __name__ == '__main__':
 
     meter_totals = pgGetMeterTotals(date, time)
     if meter_totals != None:
-        print(f'Row from table meter_status: {type(meter_totals)} {meter_totals} \n')
-        print(f'Row from table meter_status: {type(meter_totals[0])} {meter_totals[0]} ')
-        print(f'Row from table meter_status: {type(meter_totals[1])} {meter_totals[1]} ')
-        print(f'Row from table meter_status: {type(meter_totals[2])} {meter_totals[2]} ')
-        print(f'Row from table meter_status: {type(meter_totals[3])} {meter_totals[3]} ')
-        print(f'Row from table meter_status: {type(meter_totals[4])} {meter_totals[4]} ')
-        print(f'Row from table meter_status: {type(meter_totals[5])} {meter_totals[5]} ')
-        print(f'Row from table meter_status: {type(meter_totals[6])} {meter_totals[6]} ')
+        print(f'Row from table meter_totals: {type(meter_totals)} {meter_totals} \n')
+        print(f'Row from table meter_totals: {type(meter_totals[0])} {meter_totals[0]} ')
+        print(f'Row from table meter_totals: {type(meter_totals[1])} {meter_totals[1]} ')
+        print(f'Row from table meter_totals: {type(meter_totals[2])} {meter_totals[2]} ')
+        print(f'Row from table meter_totals: {type(meter_totals[3])} {meter_totals[3]} ')
+        print(f'Row from table meter_totals: {type(meter_totals[4])} {meter_totals[4]} ')
+        print(f'Row from table meter_totals: {type(meter_totals[5])} {meter_totals[5]} ')
+        print(f'Row from table meter_totals: {type(meter_totals[6])} {meter_totals[6]} ')

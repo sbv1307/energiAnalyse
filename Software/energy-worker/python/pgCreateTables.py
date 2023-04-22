@@ -72,12 +72,36 @@ def pgCreateTables():
             daily_no_7 DECIMAL,
             PRIMARY KEY (index)
         )
+        """,
+        """ CREATE TABLE hourly_totals (
+            index BIGSERIAL,
+            date DATE,
+            time TIME,
+            meter_no_1 DECIMAL NOT NULL,
+            meter_no_2 DECIMAL NOT NULL,
+            meter_no_3 DECIMAL NOT NULL,
+            meter_no_4 DECIMAL NOT NULL,
+            meter_no_5 DECIMAL NOT NULL,
+            meter_no_6 DECIMAL NOT NULL,
+            meter_no_7 DECIMAL NOT NULL,
+            hourly_no_1 DECIMAL,
+            hourly_no_2 DECIMAL,
+            hourly_no_3 DECIMAL,
+            hourly_no_4 DECIMAL,
+            hourly_no_5 DECIMAL,
+            hourly_no_6 DECIMAL,
+            hourly_no_7 DECIMAL,
+            PRIMARY KEY (index)
+        )
+        )
+        
         """)
     
     drop_commands = (
         """ DROP TABLE IF EXISTS meter_status """,
-        """ DROP TABLE IF EXISTS consumption """, 
+        """ DROP TABLE IF EXISTS consumption """,
         """ DROP TABLE IF EXISTS meter_totals """,
+        """ DROP TABLE IF EXISTS hourly_totals """,
         """ DROP TABLE IF EXISTS meter_metadata """
     )
     

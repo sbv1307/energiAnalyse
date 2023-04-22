@@ -28,13 +28,15 @@ Keys for timestame and metercount is expected to be: 'channel:[n]:timestamp' or 
 | pgConfig.py | pgConfig | filename, section   | parameters for psycopg2.connect   | Read the postgres.ini file and returne the parameters used by the pgConnect function |
 | pgConnect.py | pgConnect | None   | true / false | Connect to the PostsgreSQL database, and verify if the required tables are avalable |
 | pgCreateTables.py | pgCreateTables | None   | -  | Create required tables in the PostgreSQL database. |
+| pgGetHourlyTotals.py | pgGetHourlyTotals | date,  time | Get the value for each Energy meter at a specific date and time from hourly_totals table
 | pgGetMeterMetadata.py | pgGetMeterMetadata | Energy meter number |Energy Metadata | Returns meta data.    |
 | pgGetMeterStatus.py | GetMeterStatus | Energy meter number | Data from the meter-status table.   |    |
-| pgGetMeterTotals.py | pgGetMeterTotals | date, time | meter values | Get the value for each Energy meter at a specific date and time
+| pgGetMeterTotals.py | pgGetMeterTotals | date, time | meter values | Get the value for each Energy meter at a specific date and time grom meter_tatals table
 | pgGetMeterValues.py | pgGetMeterValues | None | Current kWh values | Get the current kWh for each Energy meter
 | pgGetNumberOfRows.py | pgGetNumberOfRows | PostgredSQL table name | Number of rows | Used my index.py to buld the page. |
 | pgGetTimeStamp.py | pgGetTimeStamp | None | System time from the PostgreSQL service   | Used for every entry done, as a reference.  |
 | pgInsertConsumption.py | pgInsertConsumption | Column Names |    |    |
+| pgInsertHourlyTotals.py | pgInsertHourlyTotals | None | None | When executed current (date, time) Energi meter values and kWh will be inserted into hourly totals
 | pgInsertTotals.py | pgInsertTotals | None | None | When executed current (date, time) Energi meter values and kWh will be inserted into meter Totals
 | pgUpdateComsumption.py | pgUpdateComsumption | Se function | rowcount | Update values in comsumption table for a specific index
 | pgUpdateMeterCount.py | pgUpdateMeterCount  | Column Names |    |    |
