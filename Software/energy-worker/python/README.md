@@ -25,19 +25,22 @@ Keys for timestame and metercount is expected to be: 'channel:[n]:timestamp' or 
 | module | Function | Arguments | Returns | Description
 |----|----|----|----|----|
 | energy-worker.py | Main | None | -  | Runs  the infinite loop. Verify redis Key - Value pair and run required process |
-| pulseTimeStampHandler.py | pulseTimeStampHandler | Redis key - value pair | -  | Calculate Energy meter counts, kWh and power comsumption. Update respective tables in PostgreSQL for further analysis, done by grafana    |
 | pgConfig.py | pgConfig | filename, section   | parameters for psycopg2.connect   | Read the postgres.ini file and returne the parameters used by the pgConnect function |
 | pgConnect.py | pgConnect | None   | true / false | Connect to the PostsgreSQL database, and verify if the required tables are avalable |
 | pgCreateTables.py | pgCreateTables | None   | -  | Create required tables in the PostgreSQL database. |
 | pgGetMeterMetadata.py | pgGetMeterMetadata | Energy meter number |Energy Metadata | Returns meta data.    |
-| pgGetMeterStatus.py | gGetMeterStatus | Energy meter number | Data from the meter-status table.   |    |
+| pgGetMeterStatus.py | GetMeterStatus | Energy meter number | Data from the meter-status table.   |    |
+| pgGetMeterTotals.py | pgGetMeterTotals | date, time | meter values | Get the value for each Energy meter at a specific date and time
+| pgGetMeterValues.py | pgGetMeterValues | None | Current kWh values | Get the current kWh for each Energy meter
 | pgGetNumberOfRows.py | pgGetNumberOfRows | PostgredSQL table name | Number of rows | Used my index.py to buld the page. |
 | pgGetTimeStamp.py | pgGetTimeStamp | None | System time from the PostgreSQL service   | Used for every entry done, as a reference.  |
 | pgInsertConsumption.py | pgInsertConsumption | Column Names |    |    |
-| pgUpdateComsumption.py | pgUpdateComsumption | Column Names |    |    |
+| pgInsertTotals.py | pgInsertTotals | None | None | When executed current (date, time) Energi meter values and kWh will be inserted into meter Totals
+| pgUpdateComsumption.py | pgUpdateComsumption | Se function | rowcount | Update values in comsumption table for a specific index
 | pgUpdateMeterCount.py | pgUpdateMeterCount  | Column Names |    |    |
 | pgUpdateMeterStatus.py | pgUpdateMeterStatus | Column Names |    |    |
 | powerUP_Handler.py |    | powerUP_Handler   | None |    |
+| pulseTimeStampHandler.py | pulseTimeStampHandler | Redis key - value pair | -  | Calculate Energy meter counts, kWh and power comsumption. Update respective tables in PostgreSQL for further analysis, done by grafana    |
 
 
 ## energy-worker.py 

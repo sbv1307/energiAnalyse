@@ -272,7 +272,11 @@ alias dockermqtt='docker exec -it $(docker ps -q --filter "name=energy-mqtthook"
 
 ### **Issues**
 
+- Logging Energy values and comsumption on an hourely basis - Maybe instgead of the current logging, which logs every "blink" at the Energy meters.
 - Python app does not print anything when running detached in docker.
+  - CMD [ "/bin/sh", "-c", "crond; python energy-worker.py" ]: Currently used.
+  - CMD ["python","-u","main.py"] in Docker file, but might not solve the problem
+  - PYTHONUNBUFFERED=1 as environment variable. Maybe in combination with PYTHONIOENCODING=UTF-8
 
 - **(ToBe sovled, if it becomes a reald problem)** 
 ````bash

@@ -42,7 +42,7 @@ def pgInsertTotals():
 
 
 
-    # Get surrent meter kWh'rs from meter_status ordered by meter numer
+    # Get current meter kWh'rs from meter_status ordered by meter numer
     meterValues = pgGetMeterValues()
 
 #    updated_rows = None
@@ -91,7 +91,6 @@ def pgInsertTotals():
     finally:
         if conn is not None:
             conn.close()
-#            return updated_rows
         
 
 if __name__ == '__main__':
