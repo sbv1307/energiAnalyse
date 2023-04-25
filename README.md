@@ -1,6 +1,6 @@
 # Energi analyse
 
-Registrerer pulser på syv energimålere og sender Ardhino timestamp videre til 
+Registrerer pulser på syv energimålere og sender Ardhino timestamp videre til en program stak bygget på docker og afviklet på Raspberry Pi
 
 ## **Usage**
 
@@ -272,6 +272,8 @@ alias dockermqtt='docker exec -it $(docker ps -q --filter "name=energy-mqtthook"
 
 ### **Issues**
 
+- The idea of keeping the logic on the Raspberry Pi and only use the Arduino to colect the time stamps has come too complex - too many processes and too much relaience on network stability.
+**Creating a new version 4.0**
 - Logging Energy values and comsumption on an hourely basis - Maybe instgead of the current logging, which logs every "blink" at the Energy meters.
 - Python app does not print anything when running detached in docker.
   - CMD [ "/bin/sh", "-c", "crond; python energy-worker.py" ]: Currently used.
